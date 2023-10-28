@@ -11,7 +11,7 @@
                 <li><router-link class="link" :to="{name: ''}">Page 4</router-link></li>
             </ul>
             <div class="icon">
-                <i @click = "toggleMobileNav" v-show="mobile" class="far fa-bars" :class = "{'icon-active': mobileNav}"></i>
+                <v-icon @click = "toggleMobileNav" v-show="mobile" icon="mdi-menu" :class = "{'icon-active': mobileNav}" />
             </div>
             <transition name="mobile-nav">
                 <ul v-show="mobileNav" class="dropdown-nav">
