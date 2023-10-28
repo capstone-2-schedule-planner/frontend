@@ -6,9 +6,8 @@
             </div>
             <ul v-show="!mobile" class="navigation">
                 <li><router-link class="link" :to="{name: 'Home'}">Home</router-link></li>
-                <li><router-link class="link" :to="{name: ''}">Scheduler</router-link></li>
-                <li><router-link class="link" :to="{name: ''}">About Us</router-link></li>
-                <li><router-link class="link" :to="{name: ''}">Page 4</router-link></li>
+                <li><router-link class="link" :to="{name: 'Scheduler'}">Scheduler</router-link></li>
+                <li><router-link class="link" :to="{name: 'AboutUs'}">About Us</router-link></li>
             </ul>
             <div class="icon">
                 <v-icon @click = "toggleMobileNav" v-show="mobile" icon="mdi-menu" :class = "{'icon-active': mobileNav}" />
@@ -16,9 +15,8 @@
             <transition name="mobile-nav">
                 <ul v-show="mobileNav" class="dropdown-nav">
                     <li><router-link class="link" :to="{name: 'Home'}">Home</router-link></li>
-                    <li><router-link class="link" :to="{name: ''}">Scheduler</router-link></li>
-                    <li><router-link class="link" :to="{name: ''}">About Us</router-link></li>
-                    <li><router-link class="link" :to="{name: ''}">Page 4</router-link></li>
+                    <li><router-link class="link" :to="{name: 'Scheduler'}">Scheduler</router-link></li>
+                    <li><router-link class="link" :to="{name: 'AboutUs'}">About Us</router-link></li>
                 </ul>
             </transition>
         </nav>

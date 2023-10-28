@@ -8,46 +8,11 @@
                 Joe'SS+
                 </h2>
                 <hr />
+                <router-link to="/Scheduler">
+                  <v-btn>Get Started</v-btn>
+                </router-link>
             </div>
         </section>
-        <div class="semester-card">
-            <h3>Fall</h3>
-            <div 
-                class = "drop-zone"
-                @drop = "onDrop($event, 1)"
-                @dragenter.prevent
-                @dragover.prevent
-            >
-                <div 
-                v-for="course in getList(1)" 
-                :key="course.id" 
-                class="drag-el"
-                draggable="true"
-                @dragstart="startDrag($event, course)"
-                >
-                {{ course.name }}
-                </div>
-            </div>
-        </div>
-        <div class="semester-card">
-            <h3>Spring</h3>
-            <div 
-                class = "drop-zone"
-                @drop = "onDrop($event, 2)"
-                @dragenter.prevent
-                @dragover.prevent
-            >
-                <div 
-                v-for="course in getList(2)" 
-                :key="course.id" 
-                class="drag-el"
-                draggable="true"
-                @dragstart="startDrag($event, course)"
-                >
-                {{ course.name }}
-                </div>
-            </div>
-        </div>
     </div>
 </template>
 
@@ -197,5 +162,11 @@ export default {
         margin-top: 16px;
       }
     }
+    .v-btn {
+      max-width: 250px;
+      height: 50px;
+      margin-top: 16px;
+      font-size: 25px
+      }
   }
 </style>
