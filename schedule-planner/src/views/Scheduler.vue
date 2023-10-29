@@ -1,28 +1,32 @@
 <template>
   <div class="margin"></div>
   <v-container fluid>
-    <v-row>
-      <v-col v-for="n in csCourses.length" :key="n">
-        <v-card>
-          <h3>{{ semesterTitle(n) }}</h3>
-          <draggable v-model="csCourses[n - 1]" item-key="id" group="a">
-            <template #item="{ element: course }">
-              <v-card>
-                <div class="course-card">{{ course.name }}</div>
-              </v-card>
-            </template>
-
-            <template #footer>
-              <div>
-                <v-btn @click="add(n-1)">Add</v-btn>
-              </div>
-            </template>
-          </draggable>
-        </v-card>
-      </v-col>
-    </v-row>
+    <div class="wrapper">
+      <div class="wrapper-box">
+        <div id="box">
+          <div class="scroll-box">
+            <v-card v-for="(n, index) in csCourses.length" :key="n">
+              <h3>{{ semesterTitle(n) }}</h3>
+              <draggable v-model="csCourses[n - 1]" item-key="id" group="a">
+                <template #item="{ element: course }">
+                  <v-card>
+                    <div class="course-card">{{ course.name }}</div>
+                  </v-card>
+                </template>
+                <template #footer>
+                  <div>
+                    <v-btn @click="add(n-1)">Add</v-btn>
+                  </div>
+                </template>
+              </draggable>
+            </v-card>
+          </div>
+        </div>
+      </div>
+    </div>
   </v-container>
 </template>
+
 
 
 <script>
@@ -130,6 +134,30 @@ export default {
 </script>
 
 <style scoped>
+.wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+.wrapper-box {
+  max-width: 2000px;
+  min-width: 2000px;
+  min-height: 500px;
+  overflow: auto;
+}
+#box {
+  width: 2000px;
+  height: 500px;
+  border: 1px solid black;
+  position: relative;
+}
+.scroll-box {
+  display: flex;
+  flex-direction: row; /* Horizontal layout */
+  overflow-x: auto; /* Horizontal scroll */
+  white-space: nowrap; /* Prevent wrapping of elements */
+}
 .margin {
   height: 100px;
 }
