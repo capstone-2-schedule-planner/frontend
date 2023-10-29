@@ -14,7 +14,7 @@
 
             <template #footer>
               <div>
-                <v-btn @click="add(key)">Add</v-btn>
+                <v-btn @click="add(n-1)">Add</v-btn>
               </div>
             </template>
           </draggable>
@@ -35,18 +35,18 @@ export default {
   },
   methods: {
     add(index) {
-      this.csCourses[index].push({ id: id, name: 'Default', list: 1 })
-      id++
+      this.csCourses[index].push({ id: id, name: 'Default', list: index });
+      id++;
     },
     semesterTitle(index) {
-      let title = ''
+      let title = '';
       if (index % 2 == 0) {
-        title = title + 'Spring '
+        title = title + 'Spring ';
       } else {
-        title = title + 'Fall '
+        title = title + 'Fall ';
       }
-      title = title + (2024 + Math.floor(index / 2))
-      return title
+      title = title + (2024 + Math.floor(index / 2));
+      return title;
     }
   },
   data() {
