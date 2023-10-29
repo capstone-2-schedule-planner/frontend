@@ -24,7 +24,9 @@
   </v-container>
 </template>
 
+
 <script>
+import axios from 'axios'
 import { ref } from 'vue'
 import draggable from 'vuedraggable'
 let id = 41
@@ -47,7 +49,18 @@ export default {
       }
       title = title + (2024 + Math.floor(index / 2));
       return title;
-    }
+    },
+    async getData() {
+      try {
+        const response = await this.$http.get(
+          "http://jsonplaceholder.typicode.com/posts"
+        );
+        // JSON responses are automatically parsed.
+        this.posts = response.data;
+      } catch (error) {
+        console.log(error);
+      }
+    },
   },
   data() {
     return {
@@ -109,7 +122,8 @@ export default {
           { id: 39, name: 'HISTORY1300', list: 8 },
           { id: 40, name: 'PHILOS1175', list: 8 }
         ]
-      ]
+      ],
+      posts: [],
     }
   }
 }
