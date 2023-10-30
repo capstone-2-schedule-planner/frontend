@@ -16,7 +16,7 @@
               <v-dialog
                 v-model="dialogActive"
                 transition="dialog-bottom-transition"
-                width="60%"
+                width="750px"
               >
                 <template v-slot:activator="{ props }">
                   <v-btn
