@@ -6,15 +6,15 @@
         <v-card>
           <h3>{{ semesterTitle(n) }}</h3>
           <draggable v-model="csCourses[n - 1]" item-key="id" group="a">
-            <template #item="{ element: course }">
+            <template #item="{ element: course, index }">
               <v-card>
                 <div class="course-card">{{ course.name }}</div>
               </v-card>
             </template>
-
             <template #footer>
               <div>
-                <v-btn @click="add(n-1)">Add</v-btn>
+                <v-btn @click="add(n - 1)">Add</v-btn>
+                <v-btn @click="deleteLastCourse(n - 1)">Delete</v-btn>
               </div>
             </template>
           </draggable>
@@ -37,6 +37,11 @@ export default {
     add(index) {
       this.csCourses[index].push({ id: id, name: 'Default', list: index });
       id++;
+    },
+    deleteLastCourse(listIndex) {
+      if (this.csCourses[listIndex].length > 0) {
+        this.csCourses[listIndex].pop(); // Remove the last course
+      }
     },
     semesterTitle(index) {
       let title = '';
@@ -124,5 +129,16 @@ export default {
   align-items: center;
   padding: 10px;
   margin: 10px;
+}
+
+.add-button {
+  flex: 1; 
+  margin-right: 10px;
+}
+
+.delete-button {
+  flex: 1;
+  padding: 2;
+  margin-left: 10px;
 }
 </style>
