@@ -23,8 +23,8 @@ const myCustomTheme: ThemeDefinition = {
     error: '#B00020',
     info: '#2196F3',
     success: '#4CAF50',
-    warning: '#FB8C00',
-  },
+    warning: '#FB8C00'
+  }
 }
 
 const vuetify = createVuetify({
@@ -33,7 +33,7 @@ const vuetify = createVuetify({
   theme: {
     defaultTheme: 'myCustomTheme',
     themes: {
-      myCustomTheme,
+      myCustomTheme
     }
   }
 })
