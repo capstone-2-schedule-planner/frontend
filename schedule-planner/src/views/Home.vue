@@ -29,6 +29,7 @@ export default {
   background-attachment: fixed;
   position: relative;
   height: 100vh;
+  background-size: 100% 100%;
 
   img {
     object-fit: cover;
