@@ -76,7 +76,7 @@
             <v-autocomplete
               v-model="searchContent"
               placeholder="Search for a Course"
-              :items="['garbage', 'hell', 'terrible', 'awful']"
+              :items="this.class_data.map(obj => obj.subject + ' ' + obj.catalog + ': ' + obj.title)"
               auto-select-first
               rounded
               density="comfortable"
@@ -119,7 +119,7 @@
 import axios from 'axios'
 import { ref } from 'vue'
 import draggable from 'vuedraggable'
-import { data } from '../../class_data.js'
+import { data } from '../assets/class_data.js'
 
 let id = 41
 export default {
@@ -144,11 +144,11 @@ export default {
       } else {
         title = title + 'Fall '
       }
-      title = title + (2024 + Math.floor(index / 2))
+      title = title + (2024 +  Math.floor(index / 2))
       return title
     },
     handleAdd() {
-      this.csCourses[this.semesterIndex].push({ id: id, name: this.searchContent })
+      this.csCourses[this.semesterIndex].push({ id: id, name: this.searchContent.split(':')[0] })
       id++
       this.searchContent = null
       this.addCourseDialog = false
@@ -169,61 +169,61 @@ export default {
 
       csCourses: [
         [
-          { id: 0, name: 'FRENG1100' },
-          { id: 1, name: 'COMPSSCI1500' },
-          { id: 2, name: 'CHEM1310' },
-          { id: 3, name: 'CHEM1319' },
-          { id: 4, name: 'MATH1214' }
+          { id: 0, name: 'FRENG 1100' },
+          { id: 1, name: 'COMP SCI 1500' },
+          { id: 2, name: 'CHEM 1310' },
+          { id: 3, name: 'CHEM 1319' },
+          { id: 4, name: 'MATH 1214' }
         ],
         [
-          { id: 5, name: 'ENGLISH1120' },
-          { id: 6, name: 'COMPSSCI1200' },
-          { id: 7, name: 'COMPSSCI1570' },
-          { id: 8, name: 'COMPSSCI1580' },
-          { id: 9, name: 'MATH1215' },
-          { id: 10, name: 'ENGLISH1160' },
-          { id: 11, name: 'PSYCH1101' }
+          { id: 5, name: 'ENGLISH 1120' },
+          { id: 6, name: 'COMP SCI 1200' },
+          { id: 7, name: 'COMP SCI 1570' },
+          { id: 8, name: 'COMP SCI 1580' },
+          { id: 9, name: 'MATH 1215' },
+          { id: 10, name: 'ENGLISH 1160' },
+          { id: 11, name: 'PSYCH 1101' }
         ],
         [
-          { id: 12, name: 'COMPSSCI1575' },
-          { id: 13, name: 'COMPSSCI1585' },
-          { id: 14, name: 'COMPENG2210' },
-          { id: 15, name: 'PHYSICS1135' },
-          { id: 16, name: 'STATS3113' },
-          { id: 17, name: 'COMPSSCI3800' }
+          { id: 12, name: 'COMP SCI 1575' },
+          { id: 13, name: 'COMP SCI 1585' },
+          { id: 14, name: 'COMP ENG 2210' },
+          { id: 15, name: 'PHYSICS 1135' },
+          { id: 16, name: 'STATS 3113' },
+          { id: 17, name: 'COMP SCI 3800' }
         ],
         [
-          { id: 18, name: 'COMPSSCI2200' },
-          { id: 19, name: 'COMPSSCI2500' },
-          { id: 20, name: 'COMPENG3150' },
-          { id: 21, name: 'PHYSICS2135' }
+          { id: 18, name: 'COMP SCI 2200' },
+          { id: 19, name: 'COMP SCI 2500' },
+          { id: 20, name: 'COMP ENG 3150' },
+          { id: 21, name: 'PHYSICS 2135' }
         ],
         [
-          { id: 22, name: 'COMPSCI2300' },
-          { id: 23, name: 'COMPSCI3610' },
-          { id: 24, name: 'MATH3108' },
-          { id: 25, name: 'ECON1100' },
-          { id: 26, name: 'PHILOS3235' }
+          { id: 22, name: 'COMP SCI 2300' },
+          { id: 23, name: 'COMP SCI 3610' },
+          { id: 24, name: 'MATH 3108' },
+          { id: 25, name: 'ECON 1100' },
+          { id: 26, name: 'PHILOS 3235' }
         ],
         [
-          { id: 27, name: 'COMPSCI3500' },
-          { id: 28, name: 'COMPSCI3402' },
-          { id: 29, name: 'COMPSCI5400' },
-          { id: 30, name: 'CHEM1310' },
-          { id: 31, name: 'SP&MS1185' }
+          { id: 27, name: 'COMP SCI 3500' },
+          { id: 28, name: 'COMP SCI 3402' },
+          { id: 29, name: 'COMP SCI 5400' },
+          { id: 30, name: 'CHEM 1310' },
+          { id: 31, name: 'SP&MS 1185' }
         ],
         [
-          { id: 32, name: 'COMPSCI4090' },
-          { id: 33, name: 'COMPSCI4610' },
-          { id: 34, name: 'COMPSCI5300' },
-          { id: 35, name: 'MECHENG1720' }
+          { id: 32, name: 'COMP SCI 4090' },
+          { id: 33, name: 'COMP SCI 4610' },
+          { id: 34, name: 'COMP SCI 5300' },
+          { id: 35, name: 'MECHENG 1720' }
         ],
         [
-          { id: 36, name: 'COMPSCI4091' },
-          { id: 37, name: 'COMPSCI5601' },
-          { id: 38, name: 'POLSCI1200' },
-          { id: 39, name: 'HISTORY1300' },
-          { id: 40, name: 'PHILOS1175' }
+          { id: 36, name: 'COMP SCI 4091' },
+          { id: 37, name: 'COMP SCI 5601' },
+          { id: 38, name: 'POLSCI 1200' },
+          { id: 39, name: 'HISTORY 1300' },
+          { id: 40, name: 'PHILOS 1175' }
         ]
       ],
       addCourseDialog: false,
