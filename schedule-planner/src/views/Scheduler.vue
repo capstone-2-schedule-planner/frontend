@@ -11,8 +11,12 @@
                 <template #item="{ element: course, index }">
                   <v-card>
                     <div class="one-line">
-                      <p>{{course.name}}</p>
-                      <v-icon icon="mdi-delete" margin-left="auto" @click="deleteCourse(n-1, course.id)"/>
+                      <p>{{ course.name }}</p>
+                      <v-icon
+                        icon="mdi-delete"
+                        margin-left="auto"
+                        @click="deleteCourse(n - 1, course.id)"
+                      />
                     </div>
                   </v-card>
                 </template>
@@ -56,12 +60,7 @@
                     width="800"
                   >
                     <template v-slot:activator="{ props }">
-                      <v-btn
-                        v-bind="props"
-                        @click="this.semesterIndex = n - 1"
-                      >
-                        Delete
-                      </v-btn>
+                      <v-btn v-bind="props" @click="this.semesterIndex = n - 1"> Delete </v-btn>
                     </template>
                     <v-card>
                       <v-card-text>
@@ -69,17 +68,8 @@
                       </v-card-text>
                       <v-card-actions>
                         <v-spacer></v-spacer>
-                        <v-btn
-                          variant="text"
-                          @click="dialogActive2 = false"
-                        >
-                          Cancel
-                        </v-btn>
-                        <v-btn
-                          color="red-darken-1"
-                          variant="text"
-                          @click="deleteSemester"
-                        >
+                        <v-btn variant="text" @click="dialogActive2 = false"> Cancel </v-btn>
+                        <v-btn color="red-darken-1" variant="text" @click="deleteSemester">
                           Delete
                         </v-btn>
                       </v-card-actions>
@@ -253,7 +243,7 @@ export default {
   margin-right: 10px;
 }
 
-.one-line{
+.one-line {
   display: flex;
   justify-content: space-between;
 }
