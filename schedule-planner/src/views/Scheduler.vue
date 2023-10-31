@@ -29,59 +29,27 @@
                 </template>
 
                 <template #footer>
-                  <v-dialog
-                    v-model="addCourseDialog"
-                    transition="dialog-bottom-transition"
-                    width="750px"
+                  <v-btn
+                    color="primary"
+                    @click="
+                      () => {
+                        this.semesterIndex = n - 1
+                        this.addCourseDialog = true
+                      }
+                    "
+                    >Add</v-btn
                   >
-                    <template v-slot:activator="{ props }">
-                      <v-btn color="primary" v-bind="props" @click="this.semesterIndex = n - 1"
-                        >Add</v-btn
-                      >
-                    </template>
-                    <template v-slot:default="{ dialogActive }">
-                      <v-card>
-                        <v-toolbar color="primary" title="Add a Course"></v-toolbar>
-                        <v-responsive width="350px">
-                          <v-card-text>
-                            <v-autocomplete
-                              v-model="searchContent"
-                              placeholder="Search for a Course"
-                              :items="['garbage', 'hell', 'terrible', 'awful']"
-                              auto-select-first
-                              rounded
-                              density="comfortable"
-                              variant="solo"
-                            />
-                          </v-card-text>
-                        </v-responsive>
-                        <v-card-actions class="justify-end">
-                          <v-btn color="primary" @click="handleAdd">Add Course</v-btn>
-                        </v-card-actions>
-                      </v-card>
-                    </template>
-                  </v-dialog>
-                  <v-dialog
-                    v-model="deleteSemesterDialog"
-                    transition="dialog-bottom-transition"
-                    width="800"
+                  <v-btn
+                    v-bind="props"
+                    @click="
+                      () => {
+                        this.semesterIndex = n - 1
+                        this.deleteSemesterDialog = true
+                      }
+                    "
                   >
-                    <template v-slot:activator="{ props }">
-                      <v-btn v-bind="props" @click="this.semesterIndex = n - 1"> Delete </v-btn>
-                    </template>
-                    <v-card>
-                      <v-card-text>
-                        <span class="text-h6">Are you sure you want to delete this Semester?</span>
-                      </v-card-text>
-                      <v-card-actions>
-                        <v-spacer></v-spacer>
-                        <v-btn variant="text" @click="deleteSemesterDialog = false"> Cancel </v-btn>
-                        <v-btn color="red-darken-1" variant="text" @click="deleteSemester">
-                          Delete
-                        </v-btn>
-                      </v-card-actions>
-                    </v-card>
-                  </v-dialog>
+                    Delete
+                  </v-btn>
                 </template>
               </draggable>
             </v-card>
@@ -99,6 +67,41 @@
       </div>
     </div>
   </v-container>
+  <v-dialog v-model="addCourseDialog" transition="dialog-bottom-transition" width="750px">
+    <template v-slot:default="{ dialogActive }">
+      <v-card>
+        <v-toolbar color="primary" title="Add a Course"></v-toolbar>
+        <v-responsive width="350px">
+          <v-card-text>
+            <v-autocomplete
+              v-model="searchContent"
+              placeholder="Search for a Course"
+              :items="['garbage', 'hell', 'terrible', 'awful']"
+              auto-select-first
+              rounded
+              density="comfortable"
+              variant="solo"
+            />
+          </v-card-text>
+        </v-responsive>
+        <v-card-actions class="justify-end">
+          <v-btn color="primary" @click="handleAdd">Add Course</v-btn>
+        </v-card-actions>
+      </v-card>
+    </template>
+  </v-dialog>
+  <v-dialog v-model="deleteSemesterDialog" transition="dialog-bottom-transition" width="800">
+    <v-card>
+      <v-card-text>
+        <span class="text-h6">Are you sure you want to delete this Semester?</span>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn variant="text" @click="deleteSemesterDialog = false"> Cancel </v-btn>
+        <v-btn color="red-darken-1" variant="text" @click="deleteSemester"> Delete </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
   <v-dialog v-model="courseInfoDialog" width="auto">
     <v-card>
       <v-card-title>
@@ -146,7 +149,7 @@ export default {
       this.csCourses[this.semesterIndex].push({ id: id, name: this.searchContent })
       id++
       this.searchContent = null
-      this.dialogActive = false
+      this.addCourseDialog = false
     },
     async getData() {
       try {
