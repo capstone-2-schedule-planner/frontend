@@ -5,13 +5,13 @@
       <div class="wrapper-box">
         <div id="box">
           <div class="scroll-box">
-            <v-card v-for="(n, index) in csCourses.length" :key="n">
+            <v-card v-for="(n) in csCourses.length" :key="n">
               <h3>{{ semesterTitle(n) }}</h3>
               <draggable v-model="csCourses[n - 1]" item-key="id" group="a">
-                <template #item="{ element: course, index }">
-                  <v-card>
+                <template #item="{ element: course}">
+                  <v-card @click="() => {this.courseInfoDialog = true; this.courseInfo = course;}">
                     <div class="one-line">
-                      <p>{{ course.name }}</p>
+                      <span>{{ course.name }}</span>
                       <v-icon
                         icon="mdi-delete"
                         margin-left="auto"
@@ -23,7 +23,7 @@
 
                 <template #footer>
                   <v-dialog
-                    v-model="dialogActive1"
+                    v-model="addCourseDialog"
                     transition="dialog-bottom-transition"
                     width="750px"
                   >
@@ -55,7 +55,7 @@
                     </template>
                   </v-dialog>
                   <v-dialog
-                    v-model="dialogActive2"
+                    v-model="deleteSemesterDialog"
                     transition="dialog-bottom-transition"
                     width="800"
                   >
@@ -68,7 +68,7 @@
                       </v-card-text>
                       <v-card-actions>
                         <v-spacer></v-spacer>
-                        <v-btn variant="text" @click="dialogActive2 = false"> Cancel </v-btn>
+                        <v-btn variant="text" @click="deleteSemesterDialog = false"> Cancel </v-btn>
                         <v-btn color="red-darken-1" variant="text" @click="deleteSemester">
                           Delete
                         </v-btn>
@@ -78,11 +78,30 @@
                 </template>
               </draggable>
             </v-card>
+            <v-card @click="this.csCourses.push([])" class="d-flex align-center justify-center" color="#f1f1f1" width="180px" outlined>
+              <v-icon icon="mdi-plus" />
+            </v-card>
           </div>
         </div>
       </div>
     </div>
   </v-container>
+  <v-dialog
+    v-model="courseInfoDialog"
+    width="auto"
+  >
+    <v-card>
+      <v-card-title>
+        {{ this.courseInfo.name }}
+      </v-card-title>
+      <v-card-text>
+        Data data data
+      </v-card-text>
+      <v-card-actions>
+        <v-btn color="primary" block @click="this.courseInfoDialog = false">Close</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script>
@@ -103,7 +122,7 @@ export default {
     },
     deleteSemester() {
       this.csCourses.splice(this.semesterIndex, 1)
-      this.dialogActive2 = false
+      this.deleteSemesterDialog = false
     },
     semesterTitle(index) {
       let title = ''
@@ -192,8 +211,10 @@ export default {
           { id: 40, name: 'PHILOS1175' }
         ]
       ],
-      dialogActive1: false,
-      dialogActive2: false,
+      addCourseDialog: false,
+      deleteSemesterDialog: false,
+      courseInfoDialog: false,
+      courseInfo: null,
       semesterIndex: 0,
       searchContent: null,
       posts: []
@@ -210,15 +231,14 @@ export default {
   flex-direction: column;
 }
 .wrapper-box {
-  max-width: 2000px;
-  min-width: 2000px;
+  width: 80vw;
   min-height: 500px;
   overflow: auto;
+  border: 1px solid black;
 }
 #box {
-  width: 2000px;
+  width: 100vw;
   height: auto;
-  border: 1px solid black;
   position: relative;
 }
 .scroll-box {
@@ -235,7 +255,7 @@ export default {
   align-items: center;
   padding: 10px;
   margin: 10px;
-  width: auto;
+  width: auto;  
 }
 
 .add-button {
