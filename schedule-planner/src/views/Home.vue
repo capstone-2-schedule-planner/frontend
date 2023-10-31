@@ -18,17 +18,17 @@
 import { ref } from 'vue'
 
 export default {
-  name: 'Home',
+  name: 'Home'
 }
 </script>
 
 <style lang="scss" scoped>
-
 .hero {
   background-image: url('../assets/sandt.png');
   background-attachment: fixed;
   position: relative;
   height: 100vh;
+  background-size: 100% 100%;
 
   img {
     object-fit: cover;
