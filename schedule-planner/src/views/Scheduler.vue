@@ -10,13 +10,16 @@
               <draggable v-model="csCourses[n - 1]" item-key="id" group="a">
                 <template #item="{ element: course, index }">
                   <v-card>
-                    <div class="course-card">{{ course.name }}</div>
+                    <div class="one-line">
+                      <p>{{course.name}}</p>
+                      <v-icon icon="mdi-delete" margin-left="auto" @click="deleteCourse(n-1, course.id)"/>
+                    </div>
                   </v-card>
                 </template>
 
                 <template #footer>
                   <v-dialog
-                    v-model="dialogActive"
+                    v-model="dialogActive1"
                     transition="dialog-bottom-transition"
                     width="750px"
                   >
@@ -47,7 +50,41 @@
                       </v-card>
                     </template>
                   </v-dialog>
-                  <v-btn @click="deleteLastCourse(n - 1)">Delete</v-btn>
+                  <v-dialog
+                    v-model="dialogActive2"
+                    transition="dialog-bottom-transition"
+                    width="800"
+                  >
+                    <template v-slot:activator="{ props }">
+                      <v-btn
+                        v-bind="props"
+                        @click="this.semesterIndex = n - 1"
+                      >
+                        Delete
+                      </v-btn>
+                    </template>
+                    <v-card>
+                      <v-card-text>
+                        <span class="text-h6">Are you sure you want to delete this Semester?</span>
+                      </v-card-text>
+                      <v-card-actions>
+                        <v-spacer></v-spacer>
+                        <v-btn
+                          variant="text"
+                          @click="dialogActive2 = false"
+                        >
+                          Cancel
+                        </v-btn>
+                        <v-btn
+                          color="red-darken-1"
+                          variant="text"
+                          @click="deleteSemester"
+                        >
+                          Delete
+                        </v-btn>
+                      </v-card-actions>
+                    </v-card>
+                  </v-dialog>
                 </template>
               </draggable>
             </v-card>
@@ -69,10 +106,14 @@ export default {
     draggable
   },
   methods: {
-    deleteLastCourse(listIndex) {
-      if (this.csCourses[listIndex].length > 0) {
-        this.csCourses[listIndex].pop() // Remove the last course
-      }
+    deleteCourse(listIndex, courseId) {
+      let course = this.csCourses[listIndex].find((obj) => obj.id === courseId)
+      let courseIndex = this.csCourses[listIndex].indexOf(course)
+      this.csCourses[listIndex].splice(courseIndex, 1)
+    },
+    deleteSemester() {
+      this.csCourses.splice(this.semesterIndex, 1)
+      this.dialogActive2 = false
     },
     semesterTitle(index) {
       let title = ''
@@ -161,7 +202,8 @@ export default {
           { id: 40, name: 'PHILOS1175' }
         ]
       ],
-      dialogActive: false,
+      dialogActive1: false,
+      dialogActive2: false,
       semesterIndex: 0,
       searchContent: null,
       posts: []
@@ -185,7 +227,7 @@ export default {
 }
 #box {
   width: 2000px;
-  height: 500px;
+  height: auto;
   border: 1px solid black;
   position: relative;
 }
@@ -203,11 +245,17 @@ export default {
   align-items: center;
   padding: 10px;
   margin: 10px;
+  width: auto;
 }
 
 .add-button {
   flex: 1;
   margin-right: 10px;
+}
+
+.one-line{
+  display: flex;
+  justify-content: space-between;
 }
 
 .delete-button {
