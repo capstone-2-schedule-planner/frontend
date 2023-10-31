@@ -5,11 +5,18 @@
       <div class="wrapper-box">
         <div id="box">
           <div class="scroll-box">
-            <v-card v-for="(n) in csCourses.length" :key="n">
+            <v-card v-for="n in csCourses.length" :key="n">
               <h3>{{ semesterTitle(n) }}</h3>
               <draggable v-model="csCourses[n - 1]" item-key="id" group="a">
-                <template #item="{ element: course}">
-                  <v-card @click="() => {this.courseInfoDialog = true; this.courseInfo = course;}">
+                <template #item="{ element: course }">
+                  <v-card
+                    @click="
+                      () => {
+                        this.courseInfoDialog = true
+                        this.courseInfo = course
+                      }
+                    "
+                  >
                     <div class="one-line">
                       <span>{{ course.name }}</span>
                       <v-icon
@@ -78,7 +85,13 @@
                 </template>
               </draggable>
             </v-card>
-            <v-card @click="this.csCourses.push([])" class="d-flex align-center justify-center" color="#f1f1f1" width="180px" outlined>
+            <v-card
+              @click="this.csCourses.push([])"
+              class="d-flex align-center justify-center"
+              color="#f1f1f1"
+              width="180px"
+              outlined
+            >
               <v-icon icon="mdi-plus" />
             </v-card>
           </div>
@@ -86,17 +99,12 @@
       </div>
     </div>
   </v-container>
-  <v-dialog
-    v-model="courseInfoDialog"
-    width="auto"
-  >
+  <v-dialog v-model="courseInfoDialog" width="auto">
     <v-card>
       <v-card-title>
         {{ this.courseInfo.name }}
       </v-card-title>
-      <v-card-text>
-        Data data data
-      </v-card-text>
+      <v-card-text> Data data data </v-card-text>
       <v-card-actions>
         <v-btn color="primary" block @click="this.courseInfoDialog = false">Close</v-btn>
       </v-card-actions>
@@ -255,7 +263,7 @@ export default {
   align-items: center;
   padding: 10px;
   margin: 10px;
-  width: auto;  
+  width: auto;
 }
 
 .add-button {
