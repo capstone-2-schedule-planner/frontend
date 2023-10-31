@@ -60,6 +60,8 @@
 import axios from 'axios'
 import { ref } from 'vue'
 import draggable from 'vuedraggable'
+import { data } from '../../class_data.js'
+
 let id = 41
 export default {
   name: 'Scheduler',
@@ -95,6 +97,8 @@ export default {
   },
   data() {
     return {
+      class_data: data,
+
       csCourses: [
         [
           { id: 0, name: 'FRENG1100' },
