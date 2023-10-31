@@ -4,7 +4,7 @@
       <div class="hero-text container">
         <h4>Introducing</h4>
         <hr />
-        <h2>Joe'SS+</h2>
+        <h2>Joe'SS++</h2>
         <hr />
         <router-link to="/Scheduler">
           <v-btn>Get Started</v-btn>
