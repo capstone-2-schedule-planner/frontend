@@ -41,7 +41,7 @@
                           </v-card-text>
                         </v-responsive>
                         <v-card-actions class="justify-end">
-                          <v-btn color="primary" @click="handleAdd">Add Course</v-btn>
+                          <v-btn color="primary" @click="getData">Add Course</v-btn>
                         </v-card-actions>
                       </v-card>
                     </template>
@@ -60,11 +60,16 @@
 import axios from 'axios'
 import { ref } from 'vue'
 import draggable from 'vuedraggable'
+import { Surreal } from 'surrealdb.js'
+
 let id = 41
 export default {
   name: 'Scheduler',
   components: {
     draggable
+  },
+  setup() {
+
   },
   methods: {
     semesterTitle(index) {
@@ -85,16 +90,31 @@ export default {
     },
     async getData() {
       try {
-        const response = await this.$http.get('http://jsonplaceholder.typicode.com/posts')
-        // JSON responses are automatically parsed.
-        this.posts = response.data
+        await this.db.connect('http://127.0.0.1:8001')
+        console.log("connected")
+        await this.db.use({ ns: 'test', db: 'test' });
+        console.log("using proper namespace")
+        const token = await this.db.signin({
+          user: 'root',
+          pass: 'root',
+        })
+        console.log("signed in")
+        let input_string = "Cap"
+        const response = await this.db.query(`SELECT title FROM course WHERE (title CONTAINS "${input_string}") OR (catalog CONTAINS "${input_string}"`)
+        console.log(response)
+        // const response = await this.$http.get('http://jsonplaceholder.typicode.com/posts')
+        // // JSON responses are automatically parsed.
+        // this.posts = response.data
       } catch (error) {
         console.log(error)
       }
     }
+
   },
   data() {
     return {
+      db: new Surreal(),
+
       csCourses: [
         [
           { id: 0, name: 'FRENG1100' },
