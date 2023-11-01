@@ -253,11 +253,13 @@ export default {
   min-height: 500px;
   overflow: auto;
   border: 1px solid black;
+  border-radius: 5px;
 }
 #box {
   width: 100vw;
   height: auto;
   position: relative;
+  padding: 10px;
 }
 .scroll-box {
   display: flex;
