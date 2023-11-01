@@ -103,11 +103,11 @@
     </v-card>
   </v-dialog>
   <v-dialog v-model="courseInfoDialog" width="auto">
-    <v-card>
+    <v-card width="50vw">
       <v-card-title>
         {{ this.courseInfo.name }}
       </v-card-title>
-      <v-card-text> Data data data </v-card-text>
+      <v-card-text> {{this.courseInfo.description}} </v-card-text>
       <v-card-actions>
         <v-btn color="primary" block @click="this.courseInfoDialog = false">Close</v-btn>
       </v-card-actions>
@@ -148,7 +148,10 @@ export default {
       return title
     },
     handleAdd() {
-      this.csCourses[this.semesterIndex].push({ id: id, name: this.searchContent.split(':')[0] })
+      let tempCourse = this.class_data.find(obj => obj.title === this.searchContent.split(': ')[1] )
+      tempCourse.name = this.searchContent.split(':')[0]
+      tempCourse.id = id
+      this.csCourses[this.semesterIndex].push(tempCourse)
       id++
       this.searchContent = null
       this.addCourseDialog = false
@@ -169,61 +172,61 @@ export default {
 
       csCourses: [
         [
-          { id: 0, name: 'FRENG 1100' },
-          { id: 1, name: 'COMP SCI 1500' },
-          { id: 2, name: 'CHEM 1310' },
-          { id: 3, name: 'CHEM 1319' },
-          { id: 4, name: 'MATH 1214' }
+          { id: 0, name: 'FRENG 1100', description: 'Examination of engineering and computer science degree programs available at Missouri S&T and career opportunities. Introduction to non-engineering majors and minors at Missouri S&T. Academic, professional and ethical expectations of the student and professionals. Introduction to campus facilities and resources for assisting in student success.', title: 'Study And Careers In Engineering and Computing' },
+          { id: 1, name: 'COMP SCI 1500', description: 'This course provides a rigorous introduction to computational problem solving, thinking, and debugging, for those with little-to-no experience in computer science. Language-agnostic foundations focus on pseudo-code, flowcharts, and software-based code tracing, then build to programming in a high-level interpreted language, with a focus on data and modeling.', title: 'Computational Problem Solving' },
+          { id: 2, name: 'CHEM 1310', description: 'A comprehensive study of general chemistry concepts with focus on the atomic and molecular nature of matter. Fundamental scientific principles will be applied to solve chemistry problems and describe macroscopic physical properties. Prerequisite: Entrance requirements.', title: 'General Chemistry I' },
+          { id: 3, name: 'CHEM 1319', description: 'The laboratory work accompanying general chemistry consists of experiments designed to supplement lectures in Chem 1310.', title: 'General Chemistry Lab' },
+          { id: 4, name: 'MATH 1214', description: 'Introduction to limits, continuity, differentiation, and integration of algebraic and transcendental functions. Applications in physical science and engineering. Credit will be given for only one of Math 1208, 1210, or 1214. Prerequisites: A grade of "C" or better in both Math 1160 and one of Math 1120 or Math 1140; or by placement exam.', title: 'Calculus I' }
         ],
         [
-          { id: 5, name: 'ENGLISH 1120' },
-          { id: 6, name: 'COMP SCI 1200' },
-          { id: 7, name: 'COMP SCI 1570' },
-          { id: 8, name: 'COMP SCI 1580' },
-          { id: 9, name: 'MATH 1215' },
-          { id: 10, name: 'ENGLISH 1160' },
-          { id: 11, name: 'PSYCH 1101' }
+          { id: 5, name: 'ENGLISH 1120', description: '', title: '' },
+          { id: 6, name: 'COMP SCI 1200', description: '', title: '' },
+          { id: 7, name: 'COMP SCI 1570', description: '', title: '' },
+          { id: 8, name: 'COMP SCI 1580', description: '', title: '' },
+          { id: 9, name: 'MATH 1215', description: '', title: '' },
+          { id: 10, name: 'ENGLISH 1160', description: '', title: '' },
+          { id: 11, name: 'PSYCH 1101', description: '', title: '' }
         ],
         [
-          { id: 12, name: 'COMP SCI 1575' },
-          { id: 13, name: 'COMP SCI 1585' },
-          { id: 14, name: 'COMP ENG 2210' },
-          { id: 15, name: 'PHYSICS 1135' },
-          { id: 16, name: 'STATS 3113' },
-          { id: 17, name: 'COMP SCI 3800' }
+          { id: 12, name: 'COMP SCI 1575', description: '', title: '' },
+          { id: 13, name: 'COMP SCI 1585', description: '', title: '' },
+          { id: 14, name: 'COMP ENG 2210', description: '', title: '' },
+          { id: 15, name: 'PHYSICS 1135', description: '', title: '' },
+          { id: 16, name: 'STATS 3113', description: '', title: '' },
+          { id: 17, name: 'COMP SCI 3800', description: '', title: '' }
         ],
         [
-          { id: 18, name: 'COMP SCI 2200' },
-          { id: 19, name: 'COMP SCI 2500' },
-          { id: 20, name: 'COMP ENG 3150' },
-          { id: 21, name: 'PHYSICS 2135' }
+          { id: 18, name: 'COMP SCI 2200', description: '', title: '' },
+          { id: 19, name: 'COMP SCI 2500', description: '', title: '' },
+          { id: 20, name: 'COMP ENG 3150', description: '', title: '' },
+          { id: 21, name: 'PHYSICS 2135', description: '', title: '' }
         ],
         [
-          { id: 22, name: 'COMP SCI 2300' },
-          { id: 23, name: 'COMP SCI 3610' },
-          { id: 24, name: 'MATH 3108' },
-          { id: 25, name: 'ECON 1100' },
-          { id: 26, name: 'PHILOS 3235' }
+          { id: 22, name: 'COMP SCI 2300', description: '', title: '' },
+          { id: 23, name: 'COMP SCI 3610', description: '', title: '' },
+          { id: 24, name: 'MATH 3108', description: '', title: '' },
+          { id: 25, name: 'ECON 1100', description: '', title: '' },
+          { id: 26, name: 'PHILOS 3235', description: '', title: '' }
         ],
         [
-          { id: 27, name: 'COMP SCI 3500' },
-          { id: 28, name: 'COMP SCI 3402' },
-          { id: 29, name: 'COMP SCI 5400' },
-          { id: 30, name: 'CHEM 1310' },
-          { id: 31, name: 'SP&MS 1185' }
+          { id: 27, name: 'COMP SCI 3500', description: '', title: '' },
+          { id: 28, name: 'COMP SCI 3402', description: '', title: '' },
+          { id: 29, name: 'COMP SCI 5400', description: '', title: '' },
+          { id: 30, name: 'CHEM 1310', description: '', title: '' },
+          { id: 31, name: 'SP&MS 1185', description: '', title: '' }
         ],
         [
-          { id: 32, name: 'COMP SCI 4090' },
-          { id: 33, name: 'COMP SCI 4610' },
-          { id: 34, name: 'COMP SCI 5300' },
-          { id: 35, name: 'MECHENG 1720' }
+          { id: 32, name: 'COMP SCI 4090', description: '', title: '' },
+          { id: 33, name: 'COMP SCI 4610', description: '', title: '' },
+          { id: 34, name: 'COMP SCI 5300', description: '', title: '' },
+          { id: 35, name: 'MECHENG 1720', description: '', title: '' }
         ],
         [
-          { id: 36, name: 'COMP SCI 4091' },
-          { id: 37, name: 'COMP SCI 5601' },
-          { id: 38, name: 'POLSCI 1200' },
-          { id: 39, name: 'HISTORY 1300' },
-          { id: 40, name: 'PHILOS 1175' }
+          { id: 36, name: 'COMP SCI 4091', description: '', title: '' },
+          { id: 37, name: 'COMP SCI 5601', description: '', title: '' },
+          { id: 38, name: 'POLSCI 1200', description: '', title: '' },
+          { id: 39, name: 'HISTORY 1300', description: '', title: '' },
+          { id: 40, name: 'PHILOS 1175', description: '', title: '' }
         ]
       ],
       addCourseDialog: false,
