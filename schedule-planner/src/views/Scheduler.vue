@@ -67,6 +67,7 @@
       </div>
     </div>
   </v-container>
+  <v-btn @click="handleExport">Export</v-btn>
   <v-dialog v-model="addCourseDialog" transition="dialog-bottom-transition" width="750px">
     <template v-slot:default="{ dialogActive }">
       <v-card>
@@ -155,6 +156,20 @@ export default {
       id++
       this.searchContent = null
       this.addCourseDialog = false
+    },
+    handleExport() {
+      var scheduleString = JSON.stringify(this.csCourses);
+
+      let element = document.createElement('a');
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(scheduleString));
+      element.setAttribute('download', 'schedule.json');
+
+      element.style.display = 'none';
+      document.body.appendChild(element);
+
+      element.click();
+
+      document.body.removeChild(element);
     },
     async getData() {
       try {
