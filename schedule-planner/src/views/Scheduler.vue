@@ -18,7 +18,7 @@
                     "
                   >
                     <div class="one-line">
-                      <span>{{ course.subject + ' ' + course.catalog }}</span>
+                      <span>{{ course.subject + ' ' + (course.catalog == 'n/a' ? 'elective' : course.catalog ) }}</span>
                       <v-icon
                         icon="mdi-delete"
                         margin-left="auto"
