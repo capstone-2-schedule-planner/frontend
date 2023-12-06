@@ -67,8 +67,10 @@
       </div>
     </div>
   </v-container>
-  <v-btn @click="handleExport">Export</v-btn>
-  <v-btn @click="this.fileUploaderDialog = true">Upload</v-btn>
+  <div class="export-and-upload">
+    <v-btn @click="handleExport">Export</v-btn>
+    <v-btn @click="this.fileUploaderDialog = true">Upload</v-btn>
+  </div>  
   <v-dialog v-model="addCourseDialog" transition="dialog-bottom-transition" width="750px">
     <template v-slot:default="{ dialogActive }">
       <v-card>
@@ -693,5 +695,11 @@ export default {
   flex: 1;
   padding: 2;
   margin-left: 10px;
+}
+
+.export-and-upload {
+  display: flex;
+  justify-content:space-evenly;
+  align-items: center; 
 }
 </style>
