@@ -1,13 +1,24 @@
 <template>
   <div class="margin"></div>
   <v-container fluid>
+    <div class="templates-upload">
+      <div class="templates-combobox">
+        <div class="combo-and-button">
+          <span>Choose a Template: </span>
+          <v-combobox class="ml-3" v-model='selectedTemplate' label="Templates" :items="['Comp Sci', 'Math']"></v-combobox>
+          <v-btn color="primary" class="ml-3" @click="handleTemplateLoad">Load</v-btn>
+        </div>
+      </div>
+      <span class="or-span"> OR </span>
+      <v-btn @click="this.fileUploaderDialog = true">Upload Your Own</v-btn>
+    </div>
     <div class="wrapper">
       <div class="wrapper-box">
         <div id="box">
           <div class="scroll-box">
-            <v-card v-for="n in csCourses.length" :key="n">
+            <v-card v-for="n in this.schedule.length" :key="n">
               <h3>{{ semesterTitle(n) }}</h3>
-              <draggable v-model="csCourses[n - 1]" item-key="id" group="a">
+              <draggable v-model="schedule[n - 1]" item-key="id" group="a">
                 <template #item="{ element: course }">
                   <v-card
                     @click="
@@ -18,7 +29,7 @@
                     "
                   >
                     <div class="one-line">
-                      <span>{{ course.name }}</span>
+                      <span>{{ course.subject + ' ' + (course.catalog == 'n/a' ? 'elective' : course.catalog ) }}</span>
                       <v-icon
                         icon="mdi-delete"
                         margin-left="auto"
@@ -54,7 +65,7 @@
               </draggable>
             </v-card>
             <v-card
-              @click="this.csCourses.push([])"
+              @click="this.schedule.push([])"
               class="d-flex align-center justify-center"
               color="#f1f1f1"
               width="180px"
@@ -65,8 +76,45 @@
           </div>
         </div>
       </div>
+      <div class="checklist-container">
+        <v-card flat>
+          <v-card-title>Degree Requirements Checklist</v-card-title>
+          <v-list dense>
+            <div 
+              v-for="(requirement, index) in requirements" 
+              :key="index" 
+              class="requirement-item"
+              @mouseover="hover = index" 
+              @mouseleave="hover = null"
+            >
+              <v-list-item-content>
+                <v-list-item-title 
+                  :class="{
+                    'requirement-met': requirement.selectedCount >= requirement.totalCount,
+                    'requirement-not-met': requirement.selectedCount < requirement.totalCount
+                  }"
+                >
+                  {{ requirement.title }}: {{ requirement.selectedCount }}/{{ requirement.totalCount }}
+                </v-list-item-title>
+              </v-list-item-content>
+
+              <div v-if="hover === index && requirement.selectedCount < requirement.totalCount" class="dropdown-content">
+                {{ requirement.hoverMessage }}
+                {{ requirement.requiredCourses.map(course => {
+                    return course.includes('n/a') ? 'Other ' + course.replace('n/a', 'elective') : course;
+                  }).join(', ') 
+                }}
+              </div>
+           </div>
+          </v-list>
+
+        </v-card>
+      </div>
     </div>
   </v-container>
+  <div class="export">
+    <v-btn color="primary" @click="handleExport">Export</v-btn>
+  </div>  
   <v-dialog v-model="addCourseDialog" transition="dialog-bottom-transition" width="750px">
     <template v-slot:default="{ dialogActive }">
       <v-card>
@@ -76,7 +124,7 @@
             <v-autocomplete
               v-model="searchContent"
               placeholder="Search for a Course"
-              :items="['garbage', 'hell', 'terrible', 'awful']"
+              :items="this.class_data.map(obj => obj.subject + ' ' + obj.catalog + ': ' + obj.title)"
               auto-select-first
               rounded
               density="comfortable"
@@ -103,15 +151,18 @@
     </v-card>
   </v-dialog>
   <v-dialog v-model="courseInfoDialog" width="auto">
-    <v-card>
+    <v-card width="50vw">
       <v-card-title>
-        {{ this.courseInfo.name }}
+        {{ this.courseInfo.title }}
       </v-card-title>
-      <v-card-text> Data data data </v-card-text>
+      <v-card-text> {{this.courseInfo.description}} </v-card-text>
       <v-card-actions>
         <v-btn color="primary" block @click="this.courseInfoDialog = false">Close</v-btn>
       </v-card-actions>
     </v-card>
+  </v-dialog>
+  <v-dialog v-model="fileUploaderDialog" width = "auto">
+    <input v-on:change="handleFileUpload"  type="file">
   </v-dialog>
 </template>
 
@@ -119,20 +170,31 @@
 import axios from 'axios'
 import { ref } from 'vue'
 import draggable from 'vuedraggable'
+import { data } from '../assets/class_data.js'
+
 let id = 41
 export default {
   name: 'Scheduler',
   components: {
     draggable
   },
+  mounted() {
+    this.updateRequirements();
+  },
+  watch: {
+    schedule: {
+      handler: 'updateRequirements',
+      deep: true
+    }
+  },
   methods: {
     deleteCourse(listIndex, courseId) {
-      let course = this.csCourses[listIndex].find((obj) => obj.id === courseId)
-      let courseIndex = this.csCourses[listIndex].indexOf(course)
-      this.csCourses[listIndex].splice(courseIndex, 1)
+      let course = this.schedule[listIndex].find((obj) => obj.id === courseId)
+      let courseIndex = this.schedule[listIndex].indexOf(course)
+      this.schedule[listIndex].splice(courseIndex, 1)
     },
     deleteSemester() {
-      this.csCourses.splice(this.semesterIndex, 1)
+      this.schedule.splice(this.semesterIndex, 1)
       this.deleteSemesterDialog = false
     },
     semesterTitle(index) {
@@ -142,14 +204,31 @@ export default {
       } else {
         title = title + 'Fall '
       }
-      title = title + (2024 + Math.floor(index / 2))
+      title = title + (2024 +  Math.floor(index / 2))
       return title
     },
     handleAdd() {
-      this.csCourses[this.semesterIndex].push({ id: id, name: this.searchContent })
+      let tempCourse = this.class_data.find(obj => obj.title === this.searchContent.split(': ')[1] )
+      tempCourse.name = this.searchContent.split(':')[0]
+      tempCourse.id = id
+      this.schedule[this.semesterIndex].push(tempCourse)
       id++
       this.searchContent = null
       this.addCourseDialog = false
+    },
+    handleExport() {
+      var scheduleString = JSON.stringify(this.schedule);
+
+      let element = document.createElement('a');
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(scheduleString));
+      element.setAttribute('download', 'schedule.json');
+
+      element.style.display = 'none';
+      document.body.appendChild(element);
+
+      element.click();
+
+      document.body.removeChild(element);
     },
     async getData() {
       try {
@@ -159,98 +238,623 @@ export default {
       } catch (error) {
         console.log(error)
       }
-    }
+    },
+    onReaderLoad(event) {
+      this.schedule = JSON.parse(event.target.result).classes;
+      console.log(this.schedule)
+      console.log(this.schedule[0][0])
+    },
+    async handleFileUpload(event) {
+      var reader = new FileReader();
+      reader.onload = this.onReaderLoad;
+      reader.readAsText(event.target.files[0]);
+      this.fileUploaderDialog = false;
+    },
+    updateRequirements() {
+      this.requirements.forEach(requirement => {
+        requirement.selectedCount = this.countSelectedCourses(requirement.requiredCourses);
+      });
+    },
+    countSelectedCourses(requiredCourses) {
+      const allScheduledCourses = this.schedule.flat();
+      
+      return requiredCourses.reduce((count, requiredCourseName) => {
+        const matchCount = allScheduledCourses.filter(course => {
+          const courseIdentifier = course.subject + ' ' + course.catalog;
+          console.log('Checking against:', courseIdentifier);
+          return courseIdentifier === requiredCourseName;
+        }).length;
+        return count + matchCount;
+      }, 0);
+    },
+    async handleTemplateLoad() {
+      if (this.selectedTemplate == null)
+        return
+
+      var response_schedule
+
+      var fileName = this.selectedTemplate.replace(/\s/g, '').toLowerCase() + '.json';
+
+      axios.get(`http://api.payton.red/partial_schedules/${fileName}`,  {
+        headers: {
+          "content-type": "text/json",
+          "Access-Control-Allow-Origin": '*'
+        },
+      }).then((response) => {
+        response_schedule=response.data.classes
+        //console.log(response_schedule)
+        this.schedule = response_schedule
+      }).catch((errors) => {
+        console.log(errors);
+      });
+    },
   },
   data() {
     return {
-      csCourses: [
-        [
-          { id: 0, name: 'FRENG1100' },
-          { id: 1, name: 'COMPSSCI1500' },
-          { id: 2, name: 'CHEM1310' },
-          { id: 3, name: 'CHEM1319' },
-          { id: 4, name: 'MATH1214' }
-        ],
-        [
-          { id: 5, name: 'ENGLISH1120' },
-          { id: 6, name: 'COMPSSCI1200' },
-          { id: 7, name: 'COMPSSCI1570' },
-          { id: 8, name: 'COMPSSCI1580' },
-          { id: 9, name: 'MATH1215' },
-          { id: 10, name: 'ENGLISH1160' },
-          { id: 11, name: 'PSYCH1101' }
-        ],
-        [
-          { id: 12, name: 'COMPSSCI1575' },
-          { id: 13, name: 'COMPSSCI1585' },
-          { id: 14, name: 'COMPENG2210' },
-          { id: 15, name: 'PHYSICS1135' },
-          { id: 16, name: 'STATS3113' },
-          { id: 17, name: 'COMPSSCI3800' }
-        ],
-        [
-          { id: 18, name: 'COMPSSCI2200' },
-          { id: 19, name: 'COMPSSCI2500' },
-          { id: 20, name: 'COMPENG3150' },
-          { id: 21, name: 'PHYSICS2135' }
-        ],
-        [
-          { id: 22, name: 'COMPSCI2300' },
-          { id: 23, name: 'COMPSCI3610' },
-          { id: 24, name: 'MATH3108' },
-          { id: 25, name: 'ECON1100' },
-          { id: 26, name: 'PHILOS3235' }
-        ],
-        [
-          { id: 27, name: 'COMPSCI3500' },
-          { id: 28, name: 'COMPSCI3402' },
-          { id: 29, name: 'COMPSCI5400' },
-          { id: 30, name: 'CHEM1310' },
-          { id: 31, name: 'SP&MS1185' }
-        ],
-        [
-          { id: 32, name: 'COMPSCI4090' },
-          { id: 33, name: 'COMPSCI4610' },
-          { id: 34, name: 'COMPSCI5300' },
-          { id: 35, name: 'MECHENG1720' }
-        ],
-        [
-          { id: 36, name: 'COMPSCI4091' },
-          { id: 37, name: 'COMPSCI5601' },
-          { id: 38, name: 'POLSCI1200' },
-          { id: 39, name: 'HISTORY1300' },
-          { id: 40, name: 'PHILOS1175' }
-        ]
+      class_data: data,
+      hover: null,
+      schedule: [
+    [
+      {
+        "id": 112,
+        "title": "Study & Careers",
+        "min_units": 1,
+        "max_units": 1,
+        "subject": "FR ENG",
+        "catalog": "1100",
+        "req_group": "NULL",
+        "description": "Examination of engineering and computer science degree programs available at Missouri S&T and career opportunities. Introduction to non-engineering majors and minors at Missouri S&T. Academic, professional and ethical expectations of the student and professionals. Introduction to campus facilities and resources for assisting in student success"
+      },
+      {
+        "id": 301523,
+        "title": "Computational Solving",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "COMP SCI",
+        "catalog": "1500",
+        "req_group": "NULL",
+        "description": "This course provides a rigorous introduction to computational problem solving, thinking, and debugging, for those with little-to-no experience in computer science. Language-agnostic foundations focus on pseudo-code, flowcharts, and software-based code tracing, then build to programming in a high-level interpreted language, with a focus on data and modeling."
+      },
+      {
+        "id": 400000,
+        "title": "Laboratory Science Elective",
+        "min_units": 4,
+        "max_units": 4,
+        "subject": "misc",
+        "catalog": "n/a",
+        "req_group": "NULL",
+        "description": "An approved science lecture-laboratory course pair totaling at least four credit hours. The laboratory is mandatory in all cases. The approved course pairs are: CHEM 1310 and CHEM 1319; PHYSICS 1505 and PHYSICS 1509; PHYSICS 1605 and PHYSICS 1609; GEOLOGY 1120 and GEOLOGY 1129; BIO SCI 1113 and BIO SCI 1219; BIO SCI 1223 and BIO SCI 1229; BIO SCI 2213 and BIO SCI 2219; BIO SCI 2353 and BIO SCI 2359; BIO SCI 2383 and BIO SCI 2389."
+      },
+      {
+        "id": 890,
+        "title": "Exposition & Argumentatn",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "ENGLISH",
+        "catalog": "1120",
+        "req_group": "NULL",
+        "description": "Practice in college level essay writing."
+      },
+      {
+        "id": 1210,
+        "title": "Calculus I",
+        "min_units": 4,
+        "max_units": 4,
+        "subject": "MATH",
+        "catalog": "1214",
+        "req_group": 10178,
+        "description": "Introduction to limits, continuity, differentiation, and integration of algebraic and transcendental functions. Applications in physical science and engineering. Credit will be given for only one of Math 1208, 1210, or 1214. Prerequisites: A grade of C or better in both Math 1160 and one of Math 1120 or Math 1140; or by placement exam."
+      }
+    ],
+    [
+      {
+        "id": 531,
+        "title": "Discrete Math For Cmp Sc",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "COMP SCI",
+        "catalog": "1200",
+        "req_group": 10024,
+        "description": "This course provides a rigorous treatment of topics from discrete mathematics which are essential to computer science. Principal topics include: formal logic (propositional & predicate), set theory, proof techniques, mathematical induction, program correctness, combinatorics, discrete probability, relations, functions, matrices, and graph theory. Prerequisite: A grade of C or better in either Comp Sci 1500 or Comp Sci 1570 and in one of Math 1120, Math 1140, Math 1208, Math 1210, Math 1211, or Math 1214."
+      },
+      {
+        "id": 524,
+        "title": "Intro To C++ Programming",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "COMP SCI",
+        "catalog": "1570",
+        "req_group": 10712,
+        "description": "Object-Oriented Programming design and development in C++. Emphasis placed on good programming practices. Topics include syntax/semantics, operators, control flow/decision branching, memory management, functions, file I/O, C-strings, arrays, pointers, classes, templates, inheritance, polymorphism, and exception handling. This course is programming intensive. Prerequisites: A grade of C or better in Comp Sci 1500 or in both of Comp Sci 1971 and Comp Sci 1981, and accompanied by Comp Sci 1580."
+      },
+      {
+        "id": 525,
+        "title": "Intro To Programming Lab",
+        "min_units": 1,
+        "max_units": 1,
+        "subject": "COMP SCI",
+        "catalog": "1580",
+        "req_group": 10713,
+        "description": "Practical applications of concepts learned in Computer Science 1570. Hands-on instruction in C++ developing, debugging, and testing programming projects. Prerequisite: Accompanied by Comp Sci 1570."
+      },
+      {
+        "id": 1211,
+        "title": "Calculus II",
+        "min_units": 4,
+        "max_units": 4,
+        "subject": "MATH",
+        "catalog": "1215",
+        "req_group": 11494,
+        "description": "Techniques of integration, sequences and series including power series, polar coordinates, polar and parametric equations. Applications in physical science and engineering. Credit will be given for only one of Math 1215 or Math 1221. Prerequisites: A grade of C or better in both Math 1160 and one of Math 1208 or 1214; or a grade of C or better in both Math 1210 and Math 1211; or a grade of  C or better in both Math 1214 and 1211; or a grade of C or better in Math 1214 and successful trigonometry placement."
+      },
+      {
+        "id": 891,
+        "title": "Writing And Research",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "ENGLISH",
+        "catalog": "1160",
+        "req_group": 10882,
+        "description": "Practice in techniques of analytical writing and in methods of research. Prerequisite: English 1120."
+      },
+      {
+        "id": 400001,
+        "title": "Humanities / Social Science Elective",
+        "min_units": 9,
+        "max_units": 9,
+        "subject": "misc",
+        "catalog": "n/a",
+        "req_group": "NULL",
+        "description": "Any nine credit hours of social science courses and three credit hours of humanities courses on the approved lists maintained on the computer science website. One course must satisfy the Missouri and U.S. Constitution requirement. COMP SCI 4700 may be counted as a Social Science elective."
+      }
+    ],
+    [
+      {
+        "id": 530,
+        "title": "Data Structures",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "COMP SCI",
+        "catalog": "1575",
+        "req_group": 10023,
+        "description": "A continuation of Object-Oriented Programming, with emphasis on the efficient organization of data through Abstract Data Types and Data Structures. Topics include Linked Lists, Vectors, Stacks, Queues, Trees, Hash Tables, Graphs and their use in a variety of algorithms. Recursive programming techniques are also covered. This course is programming intensive. Prerequisite: Grade of C or better in Comp Sci 1570."
+      },
+      {
+        "id": 301341,
+        "title": "Data Structures Lab",
+        "min_units": 1,
+        "max_units": 1,
+        "subject": "COMP SCI",
+        "catalog": "1585",
+        "req_group": 11386,
+        "description": "Hands-on instruction in programming development tools such as version control systems, integrated development environments, debuggers, profilers, and event-based programming environments. Exercises will complement the concepts presented in Comp Sci 1575. Prerequisite: Preceded or accompanied by Comp Sci 1575."
+      },
+      {
+        "id": 484,
+        "title": "Intro to Digital Logic",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "COMP ENG",
+        "catalog": "2210",
+        "req_group": 10851,
+        "description": "Examines the core components from which digital systems are designed, constructed, and analyzed. Topics include binary numbers, truth tables, Boolean algebra, Karnaugh maps, combinational logic, digital components, CMOS, programmable logic devices, and sequential circuits. Prerequisites: Accompanied by Comp Eng 2211 for Computer Engineering and Electrical Engineering majors."
+      },
+      {
+        "id": 1506,
+        "title": "Symphonic Band",
+        "min_units": 1,
+        "max_units": 1,
+        "subject": "MUSIC",
+        "catalog": "1135",
+        "req_group": "NULL",
+        "description": "Open to all students who play a band instrument. Auditions may be used for placement in ensemble."
+      },
+      {
+        "id": 400001,
+        "title": "Humanities / Social Science Elective",
+        "min_units": 9,
+        "max_units": 9,
+        "subject": "misc",
+        "catalog": "n/a",
+        "req_group": "NULL",
+        "description": "Any nine credit hours of social science courses and three credit hours of humanities courses on the approved lists maintained on the computer science website. One course must satisfy the Missouri and U.S. Constitution requirement. COMP SCI 4700 may be counted as a Social Science elective."
+      },
+      {
+        "id": 400002,
+        "title": "Statistics Elective",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "STAT",
+        "catalog": "n/a",
+        "req_group": "NULL",
+        "description": "One of STAT 3113, STAT 3115, STAT 3117, or STAT 5643."
+      }
+    ],
+    [
+      {
+        "id": 541,
+        "title": "Intro To Operating Syst",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "COMP SCI",
+        "catalog": "3800",
+        "req_group": 10029,
+        "description": "This course teaches the concepts, structure, and mechanisms of Operating Systems. Topics include process management, concurrency, synchronization, deadlock, multithreading, memory management, scheduling, and internetworking. Special emphasis is given to Unix and its modern-day derivatives. Prerequisites: A grade of C or better in both Comp Sci 1575 and Comp Eng 2210."
+      },
+      {
+        "id": 554,
+        "title": "Theory of Computer Sci",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "COMP SCI",
+        "catalog": "2200",
+        "req_group": 10034,
+        "description": "This course will cover the theoretical underpinnings of computer science. In particular, this course will cover the following topics: basic computability and formal language concepts, regular languages, context free languages, recursively-enumerable languages, and classes P, NP, and NP-completeness. Prerequisite: A grade of C or better in both Comp Sci 1200 and Comp Sci 1575."
+      },
+      {
+        "id": 539,
+        "title": "Algorithms",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "COMP SCI",
+        "catalog": "2500",
+        "req_group": 10028,
+        "description": "Students will solve recurrence relations, analyze algorithms for correctness and time/space complexity, apply these analysis techniques to fundamental dynamic programming, greedy, shortest-path, minimal spanning trees, and maximum flow algorithms and validate these analyses through programming. Prerequisite: A grade of C or better in both Comp Sci 1200 and Comp Sci 1575; preceded or accompanied by a grade of C or better in either Math 1208, Math 1211, or Math 1214."
+      },
+      {
+        "id": 489,
+        "title": "Intro Micro Embed Design",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "COMP ENG",
+        "catalog": "3150",
+        "req_group": 10289,
+        "description": "Microcontroller-based digital system design methodology and techniques. Topics include basic machine organization, interface design, and C and assembly language programming for real-time embedded systems. Prerequisites: COMP ENG 2210 and COMP SCI 1570 (or programming equivalent) each with grade of C or better."
+      },
+      {
+        "id": 1638,
+        "title": "Engineering Physics II",
+        "min_units": 4,
+        "max_units": 4,
+        "subject": "PHYSICS",
+        "catalog": "2135",
+        "req_group": 11363,
+        "description": "An introduction to electricity, magnetism, and light, with emphasis on topics needed by engineering students. Prerequisites: Physics 1135 or Physics 1111, Math 1221 or Math 1215."
+      }
+    ],
+    [
+      {
+        "id": 538,
+        "title": "File Struc Intro Databas",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "COMP SCI",
+        "catalog": "2300",
+        "req_group": 10027,
+        "description": "Course covers major topics in file structures and database systems including techniques for disk access and organization, record and file structures, index structures, sequential file, dense/sparse and secondary indexes, B-trees, range queries, insertion/deletion, hash tables, fundamentals of database systems, the ER model, relational model, algebra and SQL. Prerequisite: A grade of C or better in Comp Sci 1575."
+      },
+      {
+        "id": 564,
+        "title": "Intro. Computer Networks",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "COMP SCI",
+        "catalog": "3610",
+        "req_group": 10036,
+        "description": "This course covers general principles of computer networking, focusing primarily on internet protocols. It covers the TCP/IP stack, with the application layer first, moving down through link and physical layers. Topics include network virtualization, security, wireless, and mobile networks, with extensive live protocol analysis. Coursework is project based. Prerequisites: A grade of C or better in Comp Sci 3800."
+      },
+      {
+        "id": 1220,
+        "title": "Linear Algebra I",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "MATH",
+        "catalog": "3108",
+        "req_group": 10291,
+        "description": "Systems of linear equations, matrices, vector spaces, inner products, linear transformations, determinants, and eigenvalues are studied. Prerequisite: Math 1215 or 1221 or 2222 with a grade of C or better."
+      },
+      {
+        "id": 400001,
+        "title": "Humanities / Social Science Elective",
+        "min_units": 9,
+        "max_units": 9,
+        "subject": "misc",
+        "catalog": "n/a",
+        "req_group": "NULL",
+        "description": "Any nine credit hours of social science courses and three credit hours of humanities courses on the approved lists maintained on the computer science website. One course must satisfy the Missouri and U.S. Constitution requirement. COMP SCI 4700 may be counted as a Social Science elective."
+      },
+      {
+        "id": 400003,
+        "title": "Ethics Elective",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "PHILOS",
+        "catalog": "n/a",
+        "req_group": "NULL",
+        "description": "One of PHILOS 3225, PHILOS 3235, PHILOS 4340, or PHILOS 4368."
+      }
+    ],
+    [
+      {
+        "id": 537,
+        "title": "Prog Lang & Translators",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "COMP SCI",
+        "catalog": "3500",
+        "req_group": 10026,
+        "description": "Covers basic design of programming languages, compilers and interpreters. The concepts of syntax, variables, expressions, types, scope, functions, procedures, statements, I/O, exception handling and concurrency are introduced. The manner in which various programming languages handle these concepts is discussed. Prerequisite: A C or better grade in Comp Sci 2200."
+      },
+      {
+        "id": 400004,
+        "title": "Cmp Sc Elective",
+        "min_units": 15,
+        "max_units": 15,
+        "subject": "COMP SCI",
+        "catalog": "n/a",
+        "req_group": "NULL",
+        "description": "Fifteen hours of elective COMP SCI courses excluding COMP SCI 2002, COMP SCI 4700, COMP SCI 2001 - Domain Exploration and Innovation Methods, COMP SCI 3001 - Skill Development for Entrepreneurs and Innovators, COMP SCI 4001 - Advanced Domain Exploration and Innovation Methods, COMP SCI 4001 - Interpersonal Dynamics for Entrepreneurs and Innovators, and all COMP SCI x9xx courses. At least nine hours must be 5000-level or higher. At least nine hours must be lecture courses. COMP SCI 4010 can be counted as Computer Science Elective or Free Elective, limited to three times."
+      },
+      {
+        "id": 400004,
+        "title": "Cmp Sc Elective",
+        "min_units": 15,
+        "max_units": 15,
+        "subject": "COMP SCI",
+        "catalog": "n/a",
+        "req_group": "NULL",
+        "description": "Fifteen hours of elective COMP SCI courses excluding COMP SCI 2002, COMP SCI 4700, COMP SCI 2001 - Domain Exploration and Innovation Methods, COMP SCI 3001 - Skill Development for Entrepreneurs and Innovators, COMP SCI 4001 - Advanced Domain Exploration and Innovation Methods, COMP SCI 4001 - Interpersonal Dynamics for Entrepreneurs and Innovators, and all COMP SCI x9xx courses. At least nine hours must be 5000-level or higher. At least nine hours must be lecture courses. COMP SCI 4010 can be counted as Computer Science Elective or Free Elective, limited to three times."
+      },
+      {
+        "id": 400005,
+        "title": "Sci/Eng Elective",
+        "min_units": 6,
+        "max_units": 6,
+        "subject": "misc",
+        "catalog": "n/a",
+        "req_group": "NULL",
+        "description": "Any six hours chosen from departments that offer a degree associated with either the Discipline Specific Curricula Committee for Sciences or the Discipline Specific Curricula Committee for Engineering, excluding Computer Science. The following courses are also excluded: all 1000-level MATH courses, all STAT courses below 4000-level, all 11xx-level Physics courses, PHYSICS 2111, PHYSICS 2119, PHYSICS 2135, and PHYSICS 2145."
+      },
+      {
+        "id": 1760,
+        "title": "Principles Of Speech",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "SP&M S",
+        "catalog": "1185",
+        "req_group": "NULL",
+        "description": "A study of the arts of expression, oral communication, and listening (theory and practice); effective interaction of speech, speaker, listener, and occasion. Prerequisite: Entrance requirements."
+      }
+    ],
+    [
+      {
+        "id": 301525,
+        "title": "SE Capstone I",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "COMP SCI",
+        "catalog": "4090",
+        "req_group": 11450,
+        "description": "This is the first course in the Software Engineering Capstone sequence covering the Software Life Cycle. Students will learn about software engineering, and work in teams to spec, design, prototype, implement, test, document, deploy, and maintain a software system. This course is programming intensive, writing emphasized and addresses ethical considerations. Prerequisites: A grade of C or better in all of Comp Sci 2300, Comp Sci 2500, and Comp Sci 3610."
+      },
+      {
+        "id": 300624,
+        "title": "Computer Security",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "COMP SCI",
+        "catalog": "4610",
+        "req_group": 10720,
+        "description": "This course covers principles of threat-modeling, trust, and security policies. Topics include cryptography, reverse engineering, software security, malware analysis, authentication, access controls, operating systems hardening, virtualization, database security, and network security. This class is programming intensive and project based, with case-analyses. Prerequisites: A grade of C or better in Comp Sci 3610."
+      },
+      {
+        "id": 400004,
+        "title": "Cmp Sc Elective",
+        "min_units": 15,
+        "max_units": 15,
+        "subject": "COMP SCI",
+        "catalog": "n/a",
+        "req_group": "NULL",
+        "description": "Fifteen hours of elective COMP SCI courses excluding COMP SCI 2002, COMP SCI 4700, COMP SCI 2001 - Domain Exploration and Innovation Methods, COMP SCI 3001 - Skill Development for Entrepreneurs and Innovators, COMP SCI 4001 - Advanced Domain Exploration and Innovation Methods, COMP SCI 4001 - Interpersonal Dynamics for Entrepreneurs and Innovators, and all COMP SCI x9xx courses. At least nine hours must be 5000-level or higher. At least nine hours must be lecture courses. COMP SCI 4010 can be counted as Computer Science Elective or Free Elective, limited to three times."
+      },
+      {
+        "id": 400004,
+        "title": "Cmp Sc Elective",
+        "min_units": 15,
+        "max_units": 15,
+        "subject": "COMP SCI",
+        "catalog": "n/a",
+        "req_group": "NULL",
+        "description": "Fifteen hours of elective COMP SCI courses excluding COMP SCI 2002, COMP SCI 4700, COMP SCI 2001 - Domain Exploration and Innovation Methods, COMP SCI 3001 - Skill Development for Entrepreneurs and Innovators, COMP SCI 4001 - Advanced Domain Exploration and Innovation Methods, COMP SCI 4001 - Interpersonal Dynamics for Entrepreneurs and Innovators, and all COMP SCI x9xx courses. At least nine hours must be 5000-level or higher. At least nine hours must be lecture courses. COMP SCI 4010 can be counted as Computer Science Elective or Free Elective, limited to three times."
+      },
+      {
+        "id": 400005,
+        "title": "Sci/Eng Elective",
+        "min_units": 6,
+        "max_units": 6,
+        "subject": "misc",
+        "catalog": "n/a",
+        "req_group": "NULL",
+        "description": "Any six hours chosen from departments that offer a degree associated with either the Discipline Specific Curricula Committee for Sciences or the Discipline Specific Curricula Committee for Engineering, excluding Computer Science. The following courses are also excluded: all 1000-level MATH courses, all STAT courses below 4000-level, all 11xx-level Physics courses, PHYSICS 2111, PHYSICS 2119, PHYSICS 2135, and PHYSICS 2145."
+      }
+    ],
+    [
+      {
+        "id": 301526,
+        "title": "SE Capstone II",
+        "min_units": 3,
+        "max_units": 3,
+        "subject": "COMP SCI",
+        "catalog": "4091",
+        "req_group": 11451,
+        "description": "This is the second course in the Software Engineering Capstone sequence covering the Software Life Cycle. Students will learn about software engineering, and work in teams to spec, design, prototype, implement, test, document, deploy and maintain a software system. This course is programming intensive, writing emphasized and addresses ethical considerations. Prerequisites: A grade of C or better in both Comp Sci 4090 and Comp Sci 4610, and proceeded or accompanied by one of Philos 3225, Philos 3235, Philos 4340 or Philos 4368."
+      },
+      {
+        "id": 400004,
+        "title": "Cmp Sc Elective",
+        "min_units": 15,
+        "max_units": 15,
+        "subject": "COMP SCI",
+        "catalog": "n/a",
+        "req_group": "NULL",
+        "description": "Fifteen hours of elective COMP SCI courses excluding COMP SCI 2002, COMP SCI 4700, COMP SCI 2001 - Domain Exploration and Innovation Methods, COMP SCI 3001 - Skill Development for Entrepreneurs and Innovators, COMP SCI 4001 - Advanced Domain Exploration and Innovation Methods, COMP SCI 4001 - Interpersonal Dynamics for Entrepreneurs and Innovators, and all COMP SCI x9xx courses. At least nine hours must be 5000-level or higher. At least nine hours must be lecture courses. COMP SCI 4010 can be counted as Computer Science Elective or Free Elective, limited to three times."
+      },
+      {
+        "id": 400001,
+        "title": "Humanities / Social Science Elective",
+        "min_units": 9,
+        "max_units": 9,
+        "subject": "misc",
+        "catalog": "n/a",
+        "req_group": "NULL",
+        "description": "Any nine credit hours of social science courses and three credit hours of humanities courses on the approved lists maintained on the computer science website. One course must satisfy the Missouri and U.S. Constitution requirement. COMP SCI 4700 may be counted as a Social Science elective."
+      },
+      {
+        "id": 400006,
+        "title": "Free Elective",
+        "min_units": 8,
+        "max_units": 8,
+        "subject": "misc",
+        "catalog": "misc",
+        "req_group": "NULL",
+        "description": "Courses chosen from any discipline so that 128 hours are completed. These and only these courses may be taken pass/fail and only one course may be taken pass/fail each semester. The following courses are excluded: all 1000-level MATH courses, all STAT courses below 4000-level, all 11xx-level Physics  courses, PHYSICS 2111, PHYSICS 2119, PHYSICS 2135, PHYSICS 2145, any COMP SCI x9xx courses, and the first two years of ROTC. COMP SCI 4010 can be counted as Computer Science Elective or Free Elective, limited to three times."
+      }
+    ]
+  ],
+  requirements: [
+        { title: 'COMMUNICATION COMPONENT', 
+          requiredCourses: ['COMP SCI 2500', 'COMP SCI 4091', 'ENGLISH 1160', 'COMP SCI 2899' ],
+          selectedCount: 0,
+          totalCount: 3,
+          hoverMessage:'Need two courses from COMP SCI 2889, COMP SCI 4091, COMP SCI 2500, and one course from SP&MS 1185. Select from: '
+          },
+        { title: 'PRE-SELECTED CS COURSES',
+          requiredCourses: [
+          'FR ENG 1100', 'COMP SCI 1200', 'COMP SCI 1500', 'COMP SCI 1570', 'COMP SCI 1575',
+          'COMP SCI 1580', 'COMP SCI 1585', 'COMP SCI 2500', 'COMP SCI 2200', 'COMP SCI 3800',
+          'COMP SCI 2300', 'COMP SCI 3610', 'COMP SCI 3500', 'COMP SCI 4090', 'COMP SCI 4091', 'COMP SCI 4610'
+          ],
+          selectedCount: 0,
+          totalCount: 16,
+          hoverMessage: 'Need all 16 courses. Select from: '
+          },
+        { title: 'REQUIRED COMPUTER ENGINEERING', 
+          requiredCourses: ['COMP ENG 3150', 'COMP ENG 2210'],
+          selectedCount: 0,
+          totalCount: 2,
+          hoverMessage: 'Need both COMP ENG courses. Select from: '
+          },
+        { title: 'PRE-SELECTED MATH/STATS', 
+          requiredCourses: ['MATH 1214', 'MATH 1215'],
+          selectedCount: 0,
+          totalCount: 2,
+          hoverMessage: 'Need both MATH courses. Select from: '
+          },
+        { title: 'PRE-SELECTED ENGLISH', 
+          requiredCourses: ['ENGLISH 1120', 'ENGLISH 1160'],
+          selectedCount: 0,
+          totalCount: 2,
+          hoverMessage: 'Need both ENGLISH courses. Select from: '
+          },
+        { title: 'COMPUTER SCIENCE ELECTIVES', 
+          requiredCourses: ['COMP SCI 1000', 'COMP SCI 1001','COMP SCI 1010', 'COMP SCI 2000', 
+          'COMP SCI 2501', 'COMP SCI 2889', 'COMP SCI 3000', 'COMP SCI 3001', 'COMP SCI 3010', 'COMP SCI 3200', 
+          'COMP SCI 3601', 'COMP SCI 3803', 'COMP SCI 4000', 'COMP SCI 4001', 'COMP SCI 4010', 'COMP SCI 4096', 
+          'COMP SCI 4099', 'COMP SCI 4489', 'COMP SCI 4601', 'COMP SCI 5001', 'COMP SCI 5040', 'COMP SCI 5100', 
+          'COMP SCI 5101', 'COMP SCI 5200', 'COMP SCI 5201', 'COMP SCI 5202', 'COMP SCI 5401', 'COMP SCI 5402', 
+          'COMP SCI 5403', 'COMP SCI 5404', 'COMP SCI 5405', 'COMP SCI 5406', 'COMP SCI 5407', 'COMP SCI 5408', 
+          'COMP SCI 5409', 'COMP SCI 5420', 'COMP SCI 5500', 'COMP SCI 5600', 'COMP SCI 5602', 'COMP SCI 5700', 
+          'COMP SCI 5701', 'COMP SCI 5800', 'COMP SCI 5801', 'COMP SCI 5802', 'COMP SCI 5803', 'COMP SCI 6001',
+          'COMP SCI 6040', 'COMP SCI 6050', 'COMP SCI 6101', 'COMP SCI 6102', 'COMP SCI 6200', 'COMP SCI 6201',
+          'COMP SCI 6202', 'COMP SCI 6203', 'COMP SCI 6204', 'COMP SCI 6300', 'COMP SCI 6301', 'COMP SCI 6302',
+          'COMP SCI 6303', 'COMP SCI 6304', 'COMP SCI 6400', 'COMP SCI 6401', 'COMP SCI 6402', 'COMP SCI 6404',
+          'COMP SCI 6405', 'COMP SCI 6406', 'COMP SCI 6407', 'COMP SCI 6500', 'COMP SCI 6600', 'COMP SCI 6601', 
+          'COMP SCI 6602', 'COMP SCI 6603', 'COMP SCI 6604', 'COMP SCI 6605', 'COMP SCI 6606', 'COMP SCI 6800', 
+          'COMP SCI 6801', 'COMP SCI 5400', 'COMP SCI 5300', 'COMP SCI 5601', 'COMP SCI 3402', 'COMP SCI n/a'],
+          selectedCount: 0,
+          totalCount: 5,
+          hoverMessage: 'Need 15 hours of COMP SCI ELECTIVES. 9 at the 5*** or 6*** level, and 6 at the 3*** or above. Select from: '
+          },
+        { title: 'MATH/STATS ELECTIVES', 
+          requiredCourses: ['STAT 3113', 'MATH 3108', 'STAT 3115', 'STAT 3117', 'STAT 5643'],
+          selectedCount: 0,
+          totalCount: 2,
+          hoverMessage: 'Need one STAT elective and one MATH elective. Select from: '
+          },
+        { title: 'SPEECH ELECTIVE', 
+          requiredCourses: ['SP&MS 1185'],
+          selectedCount: 0,
+          totalCount: 1,
+          hoverMessage: 'Need one SPEECH elective. Select from: '
+          },
+        { title: 'HISTORY ELECTIVE', 
+          requiredCourses: ['POLSCI 1200', 'HISTORY 1300', 'HISTORY 1310', 'HISTORY n/a'],
+          selectedCount: 0,
+          totalCount: 1,
+          hoverMessage: 'Need one HISTORY elective. Select from: '
+          },
+        { title: 'HUM./SOC. SCIENCE ELECTIVES', 
+          requiredCourses: ['PHILOS 1105', 'ECON 1100', 'PSYCH 1101', 'PHILOS 3235', 'PHILOS 3535', 'PHILOS 4340', 
+          'PHILOS 4368', 'ENGLISH 1221', 'PHILOS n/a', 'PSYCH n/a', 'ECON n/a'],
+          selectedCount: 0,
+          totalCount: 4,
+          hoverMessage: 'Need 12 hours of HUMANITIES/SOCIAL SCIENCE ELECTIVES. 3 hours of HUMANITIES, 6 hours of SOCIAL STUDIES, and 3 hours of ETHICHS. Select from: '
+          },
+        { title: 'LABORATORY SCIENCE ELECTIVE', 
+          requiredCourses: ['BIO SCI 1113', 'BIO SCI 1219', 'CHEM 1310', 'CHEM 1319', 'BIO SCI n/a', 'CHEM n/a'],
+          selectedCount: 0,
+          totalCount: 2,
+          hoverMessage: 'Need 4 hours of LABORATORY SCIENCE ELECTIVES. Select from: '
+          },
+        { title: 'PHYSICS ELECTIVES', 
+          requiredCourses: ['PHYSICS 1135', 'PHYSICS 2135'],
+          selectedCount: 0,
+          totalCount: 2 },
+        { title: 'ENGINEERING/SCIENCE ELECTIVES', 
+          requiredCourses: ['CHEM 1310', 'CHEM 1319', 'MECH ENG1720', 'BIO SCI 1113', 'BIO SCI 1219', 'BIO SCI n/a', 'CHEM n/a', 'AERO ENG n/a',
+          'ARCH ENG n/a', 'CHEM ENG n/a', 'CIV ENG n/a', 'ELEC ENG n/a', 'ENG MGT n/a', 'ENV ENG n/a', 'EXP ENG n/a', 'MECH ENG n/a', 'CER ENG n/a', 'GEO ENG n/a',
+          'MET ENG n/a', 'MIN ENG n/a', 'NUC ENG n/a', 'PET ENG n/a', 'MATH n/a', 'PHYSICS n/a', 'STAT n/a', 'COMP ENG n/a', 'GEOPHYYS n/a', 'GEOLOGY n/a'],
+          selectedCount: 0,
+          totalCount: 2,
+          hoverMessage: 'Need 6 hours of ENGINEERING/SCIENCE ELECTIVES. Select from: '
+          }
+
       ],
       addCourseDialog: false,
       deleteSemesterDialog: false,
       courseInfoDialog: false,
+      fileUploaderDialog: false,
       courseInfo: null,
       semesterIndex: 0,
       searchContent: null,
-      posts: []
+      selectedTemplate: null,
+      posts: [],
+      file: null
     }
-  }
+  },
 }
 </script>
 
 <style scoped>
 .wrapper {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: flex-start;
+  width: 100%;
 }
 .wrapper-box {
   width: 80vw;
   min-height: 500px;
   overflow: auto;
   border: 1px solid black;
+  border-radius: 5px;
 }
 #box {
   width: 100vw;
   height: auto;
   position: relative;
+  padding: 10px;
 }
 .scroll-box {
   display: flex;
@@ -283,5 +887,67 @@ export default {
   flex: 1;
   padding: 2;
   margin-left: 10px;
+}
+
+.checklist-container {
+  width: 20vw; 
+  flex-grow: 0;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+
+.requirement-met {
+  color: green;
+}
+
+.requirement-not-met {
+  color: red;
+}
+
+.requirement-item {
+  position: relative;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 350px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  max-width: 250px
+}
+
+.requirement-item:hover .dropdown-content {
+  display: block;
+}
+
+.export{
+  display: flex;
+  margin-left: 25px;
+  justify-content:flex-start;
+  align-items: center; 
+}
+
+.templates-combobox {
+  margin-left: 25px;
+  align-items: center;
+}
+
+.templates-upload {
+  display: flex;
+  justify-content:flex-start;
+  align-items: center; 
+}
+.combo-and-button {
+  width: 450px;
+  display:flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.or-span {
+  margin-left: 100px;
+  margin-right: 100px;
 }
 </style>
