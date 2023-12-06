@@ -3,10 +3,10 @@
   <v-container fluid>
     <div class="templates-upload">
       <div class="templates-combobox">
-        <span>Choose a Template: </span>
         <div class="combo-and-button">
-          <v-combobox v-model='selectedTemplate' label="Templates" :items="['Comp Sci', 'Math']"></v-combobox>
-          <v-btn color="primary" @click="handleTemplateLoad">Load</v-btn>
+          <span>Choose a Template: </span>
+          <v-combobox class="ml-3" v-model='selectedTemplate' label="Templates" :items="['Comp Sci', 'Math']"></v-combobox>
+          <v-btn color="primary" class="ml-3" @click="handleTemplateLoad">Load</v-btn>
         </div>
       </div>
       <span> OR </span>
@@ -736,7 +736,7 @@ export default {
 }
 
 .templates-combobox {
-  width: 250px;
+  align-items: center;
 }
 
 .templates-upload {
@@ -745,6 +745,9 @@ export default {
   align-items: center; 
 }
 .combo-and-button {
+  width: 450px;
   display:flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>
