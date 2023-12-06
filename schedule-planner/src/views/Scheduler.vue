@@ -1,6 +1,17 @@
 <template>
   <div class="margin"></div>
   <v-container fluid>
+    <div class="templates-upload">
+      <div class="templates-combobox">
+        <span>Choose a Template: </span>
+        <div class="combo-and-button">
+          <v-combobox v-model='selectedTemplate' label="Templates" :items="['Comp Sci', 'Math']"></v-combobox>
+          <v-btn color="primary" @click="handleTemplateLoad">Load</v-btn>
+        </div>
+      </div>
+      <span> OR </span>
+      <v-btn @click="this.fileUploaderDialog = true">Upload Your Own</v-btn>
+    </div>
     <div class="wrapper">
       <div class="wrapper-box">
         <div id="box">
@@ -67,9 +78,8 @@
       </div>
     </div>
   </v-container>
-  <div class="export-and-upload">
-    <v-btn @click="handleExport">Export</v-btn>
-    <v-btn @click="this.fileUploaderDialog = true">Upload</v-btn>
+  <div class="export">
+    <v-btn color="primary" @click="handleExport">Export</v-btn>
   </div>  
   <v-dialog v-model="addCourseDialog" transition="dialog-bottom-transition" width="750px">
     <template v-slot:default="{ dialogActive }">
@@ -196,6 +206,27 @@ export default {
       reader.onload = this.onReaderLoad;
       reader.readAsText(event.target.files[0]);
       this.fileUploaderDialog = false;
+    },
+    async handleTemplateLoad() {
+      if (this.selectedTemplate == null)
+        return
+
+      var response_schedule
+
+      var fileName = this.selectedTemplate.replace(/\s/g, '').toLowerCase() + '.json';
+
+      axios.get(`http://api.payton.red/partial_schedules/${fileName}`,  {
+        headers: {
+          "content-type": "text/json",
+          "Access-Control-Allow-Origin": '*'
+        },
+      }).then((response) => {
+        response_schedule=response.data.classes
+        //console.log(response_schedule)
+        this.schedule = response_schedule
+      }).catch((errors) => {
+        console.log(errors);
+      });
     },
   },
   data() {
@@ -637,6 +668,7 @@ export default {
       courseInfo: null,
       semesterIndex: 0,
       searchContent: null,
+      selectedTemplate: null,
       posts: [],
       file: null
     }
@@ -697,9 +729,22 @@ export default {
   margin-left: 10px;
 }
 
-.export-and-upload {
+.export{
   display: flex;
   justify-content:space-evenly;
   align-items: center; 
+}
+
+.templates-combobox {
+  width: 250px;
+}
+
+.templates-upload {
+  display: flex;
+  justify-content:space-evenly;
+  align-items: center; 
+}
+.combo-and-button {
+  display:flex;
 }
 </style>
