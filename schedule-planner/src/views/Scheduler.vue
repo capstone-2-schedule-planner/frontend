@@ -9,7 +9,7 @@
           <v-btn color="primary" class="ml-3" @click="handleTemplateLoad">Load</v-btn>
         </div>
       </div>
-      <span> OR </span>
+      <span class="or-span"> OR </span>
       <v-btn @click="this.fileUploaderDialog = true">Upload Your Own</v-btn>
     </div>
     <div class="wrapper">
@@ -75,6 +75,40 @@
             </v-card>
           </div>
         </div>
+      </div>
+      <div class="checklist-container">
+        <v-card flat>
+          <v-card-title>Degree Requirements Checklist</v-card-title>
+          <v-list dense>
+            <div 
+              v-for="(requirement, index) in requirements" 
+              :key="index" 
+              class="requirement-item"
+              @mouseover="hover = index" 
+              @mouseleave="hover = null"
+            >
+              <v-list-item-content>
+                <v-list-item-title 
+                  :class="{
+                    'requirement-met': requirement.selectedCount >= requirement.totalCount,
+                    'requirement-not-met': requirement.selectedCount < requirement.totalCount
+                  }"
+                >
+                  {{ requirement.title }}: {{ requirement.selectedCount }}/{{ requirement.totalCount }}
+                </v-list-item-title>
+              </v-list-item-content>
+
+              <div v-if="hover === index && requirement.selectedCount < requirement.totalCount" class="dropdown-content">
+                {{ requirement.hoverMessage }}
+                {{ requirement.requiredCourses.map(course => {
+                    return course.includes('n/a') ? 'Other ' + course.replace('n/a', 'elective') : course;
+                  }).join(', ') 
+                }}
+              </div>
+           </div>
+          </v-list>
+
+        </v-card>
       </div>
     </div>
   </v-container>
@@ -144,6 +178,15 @@ export default {
   components: {
     draggable
   },
+  mounted() {
+    this.updateRequirements();
+  },
+  watch: {
+    schedule: {
+      handler: 'updateRequirements',
+      deep: true
+    }
+  },
   methods: {
     deleteCourse(listIndex, courseId) {
       let course = this.schedule[listIndex].find((obj) => obj.id === courseId)
@@ -207,6 +250,23 @@ export default {
       reader.readAsText(event.target.files[0]);
       this.fileUploaderDialog = false;
     },
+    updateRequirements() {
+      this.requirements.forEach(requirement => {
+        requirement.selectedCount = this.countSelectedCourses(requirement.requiredCourses);
+      });
+    },
+    countSelectedCourses(requiredCourses) {
+      const allScheduledCourses = this.schedule.flat();
+      
+      return requiredCourses.reduce((count, requiredCourseName) => {
+        const matchCount = allScheduledCourses.filter(course => {
+          const courseIdentifier = course.subject + ' ' + course.catalog;
+          console.log('Checking against:', courseIdentifier);
+          return courseIdentifier === requiredCourseName;
+        }).length;
+        return count + matchCount;
+      }, 0);
+    },
     async handleTemplateLoad() {
       if (this.selectedTemplate == null)
         return
@@ -232,7 +292,7 @@ export default {
   data() {
     return {
       class_data: data,
-
+      hover: null,
       schedule: [
     [
       {
@@ -661,6 +721,105 @@ export default {
       }
     ]
   ],
+  requirements: [
+        { title: 'COMMUNICATION COMPONENT', 
+          requiredCourses: ['COMP SCI 2500', 'COMP SCI 4091', 'ENGLISH 1160', 'COMP SCI 2899' ],
+          selectedCount: 0,
+          totalCount: 3,
+          hoverMessage:'Need two courses from COMP SCI 2889, COMP SCI 4091, COMP SCI 2500, and one course from SP&MS 1185. Select from: '
+          },
+        { title: 'PRE-SELECTED CS COURSES',
+          requiredCourses: [
+          'FR ENG 1100', 'COMP SCI 1200', 'COMP SCI 1500', 'COMP SCI 1570', 'COMP SCI 1575',
+          'COMP SCI 1580', 'COMP SCI 1585', 'COMP SCI 2500', 'COMP SCI 2200', 'COMP SCI 3800',
+          'COMP SCI 2300', 'COMP SCI 3610', 'COMP SCI 3500', 'COMP SCI 4090', 'COMP SCI 4091', 'COMP SCI 4610'
+          ],
+          selectedCount: 0,
+          totalCount: 16,
+          hoverMessage: 'Need all 16 courses. Select from: '
+          },
+        { title: 'REQUIRED COMPUTER ENGINEERING', 
+          requiredCourses: ['COMP ENG 3150', 'COMP ENG 2210'],
+          selectedCount: 0,
+          totalCount: 2,
+          hoverMessage: 'Need both COMP ENG courses. Select from: '
+          },
+        { title: 'PRE-SELECTED MATH/STATS', 
+          requiredCourses: ['MATH 1214', 'MATH 1215'],
+          selectedCount: 0,
+          totalCount: 2,
+          hoverMessage: 'Need both MATH courses. Select from: '
+          },
+        { title: 'PRE-SELECTED ENGLISH', 
+          requiredCourses: ['ENGLISH 1120', 'ENGLISH 1160'],
+          selectedCount: 0,
+          totalCount: 2,
+          hoverMessage: 'Need both ENGLISH courses. Select from: '
+          },
+        { title: 'COMPUTER SCIENCE ELECTIVES', 
+          requiredCourses: ['COMP SCI 1000', 'COMP SCI 1001','COMP SCI 1010', 'COMP SCI 2000', 
+          'COMP SCI 2501', 'COMP SCI 2889', 'COMP SCI 3000', 'COMP SCI 3001', 'COMP SCI 3010', 'COMP SCI 3200', 
+          'COMP SCI 3601', 'COMP SCI 3803', 'COMP SCI 4000', 'COMP SCI 4001', 'COMP SCI 4010', 'COMP SCI 4096', 
+          'COMP SCI 4099', 'COMP SCI 4489', 'COMP SCI 4601', 'COMP SCI 5001', 'COMP SCI 5040', 'COMP SCI 5100', 
+          'COMP SCI 5101', 'COMP SCI 5200', 'COMP SCI 5201', 'COMP SCI 5202', 'COMP SCI 5401', 'COMP SCI 5402', 
+          'COMP SCI 5403', 'COMP SCI 5404', 'COMP SCI 5405', 'COMP SCI 5406', 'COMP SCI 5407', 'COMP SCI 5408', 
+          'COMP SCI 5409', 'COMP SCI 5420', 'COMP SCI 5500', 'COMP SCI 5600', 'COMP SCI 5602', 'COMP SCI 5700', 
+          'COMP SCI 5701', 'COMP SCI 5800', 'COMP SCI 5801', 'COMP SCI 5802', 'COMP SCI 5803', 'COMP SCI 6001',
+          'COMP SCI 6040', 'COMP SCI 6050', 'COMP SCI 6101', 'COMP SCI 6102', 'COMP SCI 6200', 'COMP SCI 6201',
+          'COMP SCI 6202', 'COMP SCI 6203', 'COMP SCI 6204', 'COMP SCI 6300', 'COMP SCI 6301', 'COMP SCI 6302',
+          'COMP SCI 6303', 'COMP SCI 6304', 'COMP SCI 6400', 'COMP SCI 6401', 'COMP SCI 6402', 'COMP SCI 6404',
+          'COMP SCI 6405', 'COMP SCI 6406', 'COMP SCI 6407', 'COMP SCI 6500', 'COMP SCI 6600', 'COMP SCI 6601', 
+          'COMP SCI 6602', 'COMP SCI 6603', 'COMP SCI 6604', 'COMP SCI 6605', 'COMP SCI 6606', 'COMP SCI 6800', 
+          'COMP SCI 6801', 'COMP SCI 5400', 'COMP SCI 5300', 'COMP SCI 5601', 'COMP SCI 3402', 'COMP SCI n/a'],
+          selectedCount: 0,
+          totalCount: 5,
+          hoverMessage: 'Need 15 hours of COMP SCI ELECTIVES. 9 at the 5*** or 6*** level, and 6 at the 3*** or above. Select from: '
+          },
+        { title: 'MATH/STATS ELECTIVES', 
+          requiredCourses: ['STAT 3113', 'MATH 3108', 'STAT 3115', 'STAT 3117', 'STAT 5643'],
+          selectedCount: 0,
+          totalCount: 2,
+          hoverMessage: 'Need one STAT elective and one MATH elective. Select from: '
+          },
+        { title: 'SPEECH ELECTIVE', 
+          requiredCourses: ['SP&MS 1185'],
+          selectedCount: 0,
+          totalCount: 1,
+          hoverMessage: 'Need one SPEECH elective. Select from: '
+          },
+        { title: 'HISTORY ELECTIVE', 
+          requiredCourses: ['POLSCI 1200', 'HISTORY 1300', 'HISTORY 1310', 'HISTORY n/a'],
+          selectedCount: 0,
+          totalCount: 1,
+          hoverMessage: 'Need one HISTORY elective. Select from: '
+          },
+        { title: 'HUM./SOC. SCIENCE ELECTIVES', 
+          requiredCourses: ['PHILOS 1105', 'ECON 1100', 'PSYCH 1101', 'PHILOS 3235', 'PHILOS 3535', 'PHILOS 4340', 
+          'PHILOS 4368', 'ENGLISH 1221', 'PHILOS n/a', 'PSYCH n/a', 'ECON n/a'],
+          selectedCount: 0,
+          totalCount: 4,
+          hoverMessage: 'Need 12 hours of HUMANITIES/SOCIAL SCIENCE ELECTIVES. 3 hours of HUMANITIES, 6 hours of SOCIAL STUDIES, and 3 hours of ETHICHS. Select from: '
+          },
+        { title: 'LABORATORY SCIENCE ELECTIVE', 
+          requiredCourses: ['BIO SCI 1113', 'BIO SCI 1219', 'CHEM 1310', 'CHEM 1319', 'BIO SCI n/a', 'CHEM n/a'],
+          selectedCount: 0,
+          totalCount: 2,
+          hoverMessage: 'Need 4 hours of LABORATORY SCIENCE ELECTIVES. Select from: '
+          },
+        { title: 'PHYSICS ELECTIVES', 
+          requiredCourses: ['PHYSICS 1135', 'PHYSICS 2135'],
+          selectedCount: 0,
+          totalCount: 2 },
+        { title: 'ENGINEERING/SCIENCE ELECTIVES', 
+          requiredCourses: ['CHEM 1310', 'CHEM 1319', 'MECH ENG1720', 'BIO SCI 1113', 'BIO SCI 1219', 'BIO SCI n/a', 'CHEM n/a', 'AERO ENG n/a',
+          'ARCH ENG n/a', 'CHEM ENG n/a', 'CIV ENG n/a', 'ELEC ENG n/a', 'ENG MGT n/a', 'ENV ENG n/a', 'EXP ENG n/a', 'MECH ENG n/a', 'CER ENG n/a', 'GEO ENG n/a',
+          'MET ENG n/a', 'MIN ENG n/a', 'NUC ENG n/a', 'PET ENG n/a', 'MATH n/a', 'PHYSICS n/a', 'STAT n/a', 'COMP ENG n/a', 'GEOPHYYS n/a', 'GEOLOGY n/a'],
+          selectedCount: 0,
+          totalCount: 2,
+          hoverMessage: 'Need 6 hours of ENGINEERING/SCIENCE ELECTIVES. Select from: '
+          }
+
+      ],
       addCourseDialog: false,
       deleteSemesterDialog: false,
       courseInfoDialog: false,
@@ -679,9 +838,10 @@ export default {
 <style scoped>
 .wrapper {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: flex-start;
+  width: 100%;
 }
 .wrapper-box {
   width: 80vw;
@@ -729,6 +889,39 @@ export default {
   margin-left: 10px;
 }
 
+.checklist-container {
+  width: 20vw; 
+  flex-grow: 0;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+
+.requirement-met {
+  color: green;
+}
+
+.requirement-not-met {
+  color: red;
+}
+
+.requirement-item {
+  position: relative;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 350px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  max-width: 250px
+}
+
+.requirement-item:hover .dropdown-content {
+  display: block;
+}
+
 .export{
   display: flex;
   justify-content:space-evenly;
@@ -736,12 +929,13 @@ export default {
 }
 
 .templates-combobox {
+  margin-left: 25px;
   align-items: center;
 }
 
 .templates-upload {
   display: flex;
-  justify-content:space-evenly;
+  justify-content:flex-start;
   align-items: center; 
 }
 .combo-and-button {
@@ -749,5 +943,10 @@ export default {
   display:flex;
   justify-content: center;
   align-items: center;
+}
+
+.or-span {
+  margin-left: 100px;
+  margin-right: 100px;
 }
 </style>
