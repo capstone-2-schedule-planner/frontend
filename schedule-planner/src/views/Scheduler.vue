@@ -124,7 +124,8 @@
             <v-autocomplete
               v-model="searchContent"
               placeholder="Search for a Course"
-              :items="this.class_data.map(obj => obj.subject + ' ' + obj.catalog + ': ' + obj.title)"
+              :items="this.searchResults"
+              @change="(event) => getClassesFromSearch(event)"
               auto-select-first
               rounded
               density="comfortable"
@@ -288,6 +289,20 @@ export default {
         console.log(errors);
       });
     },
+    async getClassesFromSearch(event) {
+      console.log(event.target)
+      axios.get(`http://api.payton.red/get_search_results/${event}`,  {
+        headers: {
+          "content-type": "text/json",
+          "Access-Control-Allow-Origin": '*'
+        },
+      }).then((response) => {
+        this.searchResults = response.data
+        console.log(response)
+      }).catch((errors) => {
+        console.log(errors);
+      });
+    }
   },
   data() {
     return {
@@ -827,6 +842,7 @@ export default {
       courseInfo: null,
       semesterIndex: 0,
       searchContent: null,
+      searchResults: [],
       selectedTemplate: null,
       posts: [],
       file: null
